@@ -209,7 +209,7 @@ production 发布使用产品版本本身，不传 `--build-version`。其上传
 
 版本派生不改变固定更新通道，也不改变 `nightly.yml` / `nightly-mac.yml` 文件名。SemVer 排序为 `0.1.6-alpha.1 < 0.1.6-alpha.1.20260916.1 < 0.1.6-alpha.2`，稳定基础版本的测试版低于该稳定版。客户端只接受更高版本：替换 feed 无法让已安装的较高版本更新到较低的纠正版。这类客户端需要手动安装；保持自动降级关闭。[版本决策](../../.agents/notes/implemented/process/2026-09-16-desktop-release-version-derivation.zh.md)解释为什么不能用通道名替换预发布标识。
 
-打包、上传以及手动 macOS 签名检查使用 `apps/desktop/.env.windows` 或 `.env.macos`，由目标平台选择。复制对应的 [Windows 模板](.env.windows.example) 或 [macOS 模板](.env.macos.example)，填写本机配置；Git 忽略这两个本地文件，安装产物也不包含它们。发布字段只从目标文件读取，不回退到系统或 shell 中的同名变量；`PATH`、代理和构建工具环境仍保留。发布版本是命令参数而非发布字段，上传从打包写下的完成记录中读取它。文件使用 UTF-8，支持 BOM；相对证书、SignTool、Apple API Key 和钥匙串路径以 `apps/desktop` 为基准，变量值不做 shell 展开，包含 `#` 或空格的密码需要引号。CI 同样在运行前生成目标文件。
+打包、上传以及手动 macOS 签名检查使用 `apps/desktop/.env.windows`、`.env.macos` 或 `.env.linux`，由目标平台选择。复制对应的 [Windows 模板](.env.windows.example)、[macOS 模板](.env.macos.example) 或 [Linux 模板](.env.linux.example)，填写本机配置；Git 忽略这些本地文件，安装产物也不包含它们。发布字段只从目标文件读取，不回退到系统或 shell 中的同名变量；`PATH`、代理和构建工具环境仍保留。发布版本是命令参数而非发布字段，上传从打包写下的完成记录中读取它。文件使用 UTF-8，支持 BOM；相对证书、SignTool、Apple API Key 和钥匙串路径以 `apps/desktop` 为基准，变量值不做 shell 展开，包含 `#` 或空格的密码需要引号。CI 同样在运行前生成目标文件。
 
 每条打包命令在构建与下载前检查应用 ID、更新地址和该模式需要的签名配置，随后探测本次运行要用的外部工具：归档读取工具，以及 Windows 目标的安装器编译器。macOS 检查身份、Team ID、一套完整公证凭据、`CSC_LINK` 指定的可读本地 p12 文件、显式配置的 `CSC_KEY_PASSWORD`，以及引用的 API Key 和钥匙串文件；Windows 检查公开代码签名证书、SignTool 文件、容器名称和 PIN 格式。仅准备 Windows 资源或显式未签名打包不要求签名凭据。配置检查不验证 PIN 是否正确、Token 是否登录、钥匙串是否解锁或 Apple 是否接受凭据；实际签名与公证负责这些检查。`--build-version auto` 会访问目标 bucket，`--check` 下同样如此。单独运行相同检查：
 
@@ -229,11 +229,27 @@ pnpm run package:desktop
 pnpm run package:desktop:mac:arm64
 pnpm run package:desktop:mac:x64
 pnpm run package:desktop:win:x64
+pnpm run package:desktop:linux:x64
+pnpm run package:desktop:linux:arm64
 ```
 
-macOS arm64 命令要求 Apple Silicon。macOS x64 命令可以在 Intel macOS 或带 Rosetta 的 Apple Silicon 上运行。Windows x64 命令要求 Windows x64。Linux 不是受支持的 Desktop 发布目标。
+macOS arm64 命令要求 Apple Silicon。macOS x64 命令可以在 Intel macOS 或带 Rosetta 的 Apple Silicon 上运行。Windows x64 命令要求 Windows x64。每条 Linux 命令要求与其架构相同的构建主机，因为打包期间由本机执行所打包 Electron 运行时的载荷与 Host smoke 检查；它使用随附的 fpm 及主机的 `rpmbuild`、`xz`、`dpkg-deb` 生成 deb 与 rpm。
+
+Linux 包通过常规系统包渠道分发，而非托管更新 feed。因此它们不携带 `app-update.yml`，不包含强制更新策略，也没有签名或公证步骤，且没有 `upload:*` 命令。对应的 `--dir` 命令停在 `linux-unpacked`；打包后的可执行文件名为 `deepseek-harness`，`runtime/cli/bin/dsh` 通过它启动捆绑的 CLI。产物名为 x64 的 `deepseek-harness-<version>-linux-amd64.deb` 与 `deepseek-harness-<version>-linux-x86_64.rpm`，arm64 对应 `arm64` 与 `aarch64`。Linux 没有原生 LibreOffice 引擎，因此 Office 转换提供者改用 WASM 引擎。
 
 每个目标都在 `apps/desktop/.desktop-build/targets/<target>/` 下持有自己的打包输入、已准备运行时、包集合、dsh 依赖树、pnpm 准备状态、未打包应用、更新元数据和最终产物。Electron 归档缓存继续由 `.desktop-build/downloads` 共享，因为每个归档文件名都包含版本、平台和架构，并且在解包前经过验证。目标构建绝不读取其他目标的可变准备状态。
+
+#### Linux 支持来源
+
+上游不提供 Linux 打包。本 fork 直接承载该支持，`.github/linux-overlay/manifest.json` 列出构成它的确切文件。每次发布构建会下载某个已发布 `dsh-vX.Y.Z-rc.N` tag 的上游源码压缩包，把这些文件复制覆盖到解包后的源码树上，再进行打包；源码不做合并，也无需手动同步，因为更新的上游 tag 只是一个需要重新覆盖的新压缩包。
+
+[`release-desktop-linux.yml`](../../.github/workflows/release-desktop-linux.yml) 调用 [`.github/linux-overlay/apply.mjs`](../../.github/linux-overlay/apply.mjs) 完成该复制。`alpha` 与 `beta` tag 永不会被选中。工作流每日运行，若最新 rc tag 已有对应发布则立即停止；也可以手动指定 tag 启动，或用 `force` 重建已存在的发布。
+
+overlay 是范围有限、可评审的改动，而非整树合并，但它确实会取代上游对所列文件的修改：当上游改动了其中某个文件时，构建会打印出该文件名的警告并继续。当上游改动确有影响时，需手工协调该文件。查看涉及哪些文件：
+
+```sh
+python3 -c "import json;print('\n'.join(json.load(open('.github/linux-overlay/manifest.json'))['files']))"
+```
 
 ### 运行时文件筛选
 

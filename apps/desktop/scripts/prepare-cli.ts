@@ -8,10 +8,13 @@ import { join } from 'node:path'
  * @param destination - Physical runtime/cli directory prepared for the application.
  * @param platform - Target Desktop operating system.
  */
-export function prepareDesktopCli(destination: string, platform: 'darwin' | 'win32'): void {
-  const name = platform === 'win32' ? 'dsh.cmd' : 'dsh'
-  const command = join(destination, 'bin', name)
+export function prepareDesktopCli(destination: string, platform: 'darwin' | 'win32' | 'linux'): void {
+  const windows = platform === 'win32'
+  // Linux keeps the application executable beside the resources directory, so its launcher
+  // resolves that sibling rather than the macOS bundle path; both install the `dsh` command.
+  const source = windows ? 'dsh.cmd' : platform === 'linux' ? 'dsh-linux' : 'dsh'
+  const command = join(destination, 'bin', windows ? 'dsh.cmd' : 'dsh')
   mkdirSync(join(destination, 'bin'), { recursive: true })
-  copyFileSync(join(import.meta.dirname, '..', 'cli', name), command)
-  if (platform === 'darwin') chmodSync(command, 0o755)
+  copyFileSync(join(import.meta.dirname, '..', 'cli', source), command)
+  if (!windows) chmodSync(command, 0o755)
 }

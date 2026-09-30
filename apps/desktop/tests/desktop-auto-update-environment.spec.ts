@@ -107,8 +107,15 @@ describe('desktop auto-update environment', () => {
     expect(() => resolveDesktopAutoUpdateEnvironment({
       DSH_DESKTOP_AUTO_UPDATE_ENV: 'staging',
     })).toThrow(/test.*production/u)
-    expect(() => resolveDesktopAutoUpdateTarget('linux', 'x64')).toThrow(/unsupported target/u)
-    expect(() => desktopBuildRecordFilename('linux-x64' as 'mac-arm64')).toThrow(/unsupported target/u)
+    expect(() => resolveDesktopAutoUpdateTarget('freebsd', 'x64')).toThrow(/unsupported target/u)
+    expect(() => desktopBuildRecordFilename('linux-ia32' as 'mac-arm64')).toThrow(/unsupported target/u)
+  })
+
+  it('resolves the Linux release targets without a managed feed', () => {
+    expect(resolveDesktopAutoUpdateTarget('linux', 'x64')).toBe('linux-x64')
+    expect(resolveDesktopAutoUpdateTarget('linux', 'arm64')).toBe('linux-arm64')
+    expect(desktopBuildRecordFilename('linux-x64')).toBe('linux-x64-release.json')
+    expect(desktopBuildRecordFilename('linux-arm64')).toBe('linux-arm64-release.json')
   })
 
   it('uses Nightly metadata for stable and prerelease Desktop versions', () => {
@@ -116,6 +123,7 @@ describe('desktop auto-update environment', () => {
     expect(desktopUpdateMetadataFilename('1.2.3-alpha.4', 'darwin')).toBe('nightly-mac.yml')
     expect(desktopUpdateMetadataFilename('1.2.3-beta.2', 'win32')).toBe('nightly.yml')
     expect(() => desktopUpdateMetadataFilename('not-semver', 'darwin')).toThrow(/invalid Desktop version/u)
+    // Linux packages ship as deb/rpm rather than an electron-updater feed, so they emit no metadata.
     expect(() => desktopUpdateMetadataFilename('1.2.3', 'linux')).toThrow(/unsupported metadata platform/u)
   })
 })

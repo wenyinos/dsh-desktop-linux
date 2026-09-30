@@ -1,0 +1,269 @@
+# Package the Linux Desktop application (deb and rpm) from an upstream release tag.
+#
+# Every run downloads the upstream source archive for one released `dsh-vX.Y.Z-rc.N` tag and
+# copies this fork's Linux support over it, listed in .github/linux-overlay/manifest.json. The
+# source is never merged and never synchronized by hand: a newer upstream tag is simply a newer
+# archive to overlay. `alpha` and `beta` builds are never selected.
+#
+# The daily schedule selects the newest rc tag and stops immediately when a release for it
+# already exists, so an unchanged upstream costs one short resolution job.
+name: Release (Linux Desktop)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Upstream tag to package, for example dsh-v0.2.0-rc.2. Empty selects the newest rc tag.'
+        required: false
+        type: string
+      force:
+        description: 'Rebuild and replace the release even when this tag was already packaged.'
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    # Daily, off the hour: a top-of-hour cron queues behind the many jobs scheduled there.
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  # A scheduled run must never displace a hand-started one, so runs are never cancelled.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PRIMARY_NODE_VERSION: '24'
+  DSH_TELEMETRY_DISABLED: '1'
+  UPSTREAM_REPOSITORY: deepseek-ai/deepseek-harness
+
+jobs:
+  resolve:
+    name: Resolve upstream tag
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.select.outputs.tag }}
+      version: ${{ steps.select.outputs.version }}
+      build: ${{ steps.select.outputs.build }}
+    steps:
+      - name: Select the newest upstream rc tag
+        id: select
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED: ${{ inputs.tag }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          if [ -n "${REQUESTED}" ]; then
+            tag="${REQUESTED}"
+          else
+            # Newest released rc tag by version order; alpha and beta builds are excluded.
+            tag=$(git ls-remote --tags --refs "https://github.com/${UPSTREAM_REPOSITORY}.git" \
+              | awk -F/ '{print $NF}' \
+              | grep -E '^dsh-v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$' \
+              | sort -V | tail -1)
+          fi
+          if [ -z "${tag}" ]; then
+            echo "No released rc tag was found upstream." >&2
+            exit 1
+          fi
+          if ! printf '%s' "${tag}" | grep -qE '^dsh-v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
+            echo "Refusing ${tag}: name a released rc tag such as dsh-v0.2.0-rc.2." >&2
+            exit 1
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#dsh-v}" >> "$GITHUB_OUTPUT"
+
+          # The published release is the record of what has been packaged, so a daily run
+          # against an unchanged upstream stops here instead of rebuilding it.
+          if [ "${FORCE}" = "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            echo "Selected ${tag}; rebuilding because force was requested."
+          elif gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "Selected ${tag}; already packaged, so no build is needed."
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            echo "Selected ${tag}; not packaged yet."
+          fi
+
+  # deb and rpm are assembled natively on the architecture they target: the packaged Electron
+  # runtime is executed by the payload and Host smoke checks during packaging, which cannot run
+  # under emulation.
+  package:
+    name: Package Linux ${{ matrix.arch }}
+    needs: resolve
+    if: needs.resolve.outputs.build == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+            target: linux-x64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            target: linux-arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Configure runner-private caches
+        run: |
+          echo "NODE_COMPILE_CACHE=${{ runner.temp }}/node-compile-cache" >> "$GITHUB_ENV"
+          echo "npm_config_devdir=${{ runner.temp }}/node-gyp" >> "$GITHUB_ENV"
+          echo "TMPDIR=${{ runner.temp }}" >> "$GITHUB_ENV"
+
+      # The prepared payload compiles the native system add-ons against the Node development
+      # headers and builds the deb and rpm with rpmbuild, xz, and dpkg-deb. The static Landlock
+      # launcher is linked with musl, and the flock addon builds both glibc and musl variants.
+      - name: Install the packaging toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential musl-tools rpm xz-utils dpkg-dev fakeroot
+
+      # The application is built in a tree of its own rather than in this checkout, so the
+      # Linux support files stay available to overlay and nothing in the workspace changes.
+      - name: Download the upstream source archive
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          source="$RUNNER_TEMP/source"
+          mkdir -p "$source"
+          curl --fail --location --silent --show-error \
+            "https://github.com/${UPSTREAM_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz" \
+            --output "$RUNNER_TEMP/upstream.tar.gz"
+          tar -xzf "$RUNNER_TEMP/upstream.tar.gz" -C "$source" --strip-components=1
+          echo "SOURCE_ROOT=$source" >> "$GITHUB_ENV"
+          echo "Extracted ${TAG}:"
+          sed -n '1,3p' "$source/package.json"
+
+      - name: Apply the Linux support
+        run: node "$GITHUB_WORKSPACE/.github/linux-overlay/apply.mjs" --source "$GITHUB_WORKSPACE" --target "$SOURCE_ROOT"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          dest: ${{ runner.temp }}/setup-pnpm-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}-${{ matrix.arch }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Configure the pnpm store
+        id: pnpm-store
+        working-directory: ${{ env.SOURCE_ROOT }}
+        run: |
+          set -euo pipefail
+          store_root="$HOME/.local/share/pnpm/store"
+          echo "PNPM_CONFIG_STORE_DIR=$store_root" >> "$GITHUB_ENV"
+          echo "path=$(PNPM_CONFIG_STORE_DIR="$store_root" pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+          echo "lockfile=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-node-${{ env.PRIMARY_NODE_VERSION }}-pnpm-${{ steps.pnpm-store.outputs.lockfile }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-node-${{ env.PRIMARY_NODE_VERSION }}-pnpm-
+
+      - name: Install dependencies
+        working-directory: ${{ env.SOURCE_ROOT }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Write the Linux release settings
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Linux packages ship outside the managed update feed, so this file carries no signing
+          # identity, notarization credential, policy origin, or update destination.
+          printf '%s\n' \
+            'DSH_DESKTOP_APP_ID=com.deepseek.harness' \
+            'DSH_DESKTOP_LINUX_MAINTAINER=DeepSeek <support@deepseek.com>' \
+            'DSH_DESKTOP_LINUX_PACKAGE_NAME=deepseek-harness' \
+            > "$SOURCE_ROOT/apps/desktop/.env.linux"
+          echo "Packaging ${VERSION} for ${{ matrix.target }}."
+
+      - name: Package deb and rpm
+        working-directory: ${{ env.SOURCE_ROOT }}
+        run: pnpm run package:desktop:${{ matrix.target == 'linux-x64' && 'linux:x64' || 'linux:arm64' }}
+
+      - name: Record the packaging run
+        if: always()
+        run: |
+          set -euo pipefail
+          root="$SOURCE_ROOT/apps/desktop/.desktop-build/packaging-runs"
+          if [ -d "$root" ]; then
+            find "$root" -name events.jsonl -print -exec tail -n 40 {} \; || true
+          fi
+
+      - name: Collect packages
+        if: always()
+        run: |
+          set -euo pipefail
+          root="$SOURCE_ROOT/apps/desktop/.desktop-build/targets/${{ matrix.target }}/artifacts"
+          mkdir -p "$GITHUB_WORKSPACE/linux-artifacts"
+          if [ -d "$root" ]; then
+            find "$root" -maxdepth 1 -type f \( -name '*.deb' -o -name '*.rpm' \) \
+              -exec cp -v {} "$GITHUB_WORKSPACE/linux-artifacts/" \;
+          fi
+          ls -la "$GITHUB_WORKSPACE/linux-artifacts"
+
+      - name: Upload packages
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deepseek-harness-linux-${{ matrix.arch }}
+          path: linux-artifacts/*
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Publication waits for both architectures: a release carrying only one of them would look
+  # complete while silently missing a platform.
+  publish:
+    name: Publish release
+    needs: [resolve, package]
+    if: needs.resolve.outputs.build == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: deepseek-harness-linux-*
+          merge-multiple: true
+          path: packages
+
+      - name: Require both architectures and both formats
+        run: |
+          set -euo pipefail
+          ls -la packages
+          for suffix in amd64.deb x86_64.rpm arm64.deb aarch64.rpm; do
+            if [ -z "$(find packages -maxdepth 1 -type f -name "*-${suffix}" | head -1)" ]; then
+              echo "Missing a package ending in ${suffix}; both architectures must build." >&2
+              exit 1
+            fi
+          done
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          if [ "${FORCE}" = "true" ]; then
+            gh release delete "${TAG}" --repo "${GITHUB_REPOSITORY}" --cleanup-tag --yes || true
+          fi
+          gh release create "${TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "DeepSeek Harness ${VERSION} (Linux)" \
+            --notes "Linux deb and rpm packages built from the upstream ${TAG} source archive with this fork's Linux support applied." \
+            packages/*
+          echo "Published ${TAG}."

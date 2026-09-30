@@ -68,6 +68,34 @@ async function probeWindowsInstallerToolchain(environment: NodeJS.ProcessEnv): P
   return failures
 }
 
+/** One external command the packaging run needs, with the reason it is required. */
+const LINUX_PACKAGE_TOOLS: readonly { readonly tool: string; readonly args: readonly string[]; readonly reason: string }[] = [
+  // electron-builder bundles fpm, but rpm conversion still shells out to the system rpmbuild and xz.
+  { tool: 'rpmbuild', args: ['--version'], reason: 'rpmbuild is required to build the rpm package' },
+  { tool: 'xz', args: ['--version'], reason: 'xz is required to compress the rpm package' },
+  // dpkg-deb validates the assembled deb during packaging; fpm itself needs a dpkg-capable host.
+  { tool: 'dpkg-deb', args: ['--version'], reason: 'dpkg-deb is required to build the deb package' },
+]
+
+async function probeCommand(tool: string, args: readonly string[]): Promise<string | undefined> {
+  try {
+    await run(tool, [...args], { timeout: 20_000, windowsHide: true })
+    return undefined
+  }
+  catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+}
+
+async function probeLinuxPackageToolchain(): Promise<DesktopToolchainProbeFailure[]> {
+  const failures: DesktopToolchainProbeFailure[] = []
+  for (const { tool, args, reason } of LINUX_PACKAGE_TOOLS) {
+    const detail = await probeCommand(tool, args)
+    if (detail !== undefined) failures.push({ tool, detail: `${reason} (${detail})` })
+  }
+  return failures
+}
+
 /**
  * Probe every external tool one packaging run needs.
  * @param platform - Target platform; a Windows target already requires a Windows build host.
@@ -75,13 +103,14 @@ async function probeWindowsInstallerToolchain(environment: NodeJS.ProcessEnv): P
  * @returns Every probe that failed, empty when the host can run the packaging sequence.
  */
 export async function probeDesktopToolchain(
-  platform: 'darwin' | 'win32',
+  platform: 'darwin' | 'win32' | 'linux',
   environment: NodeJS.ProcessEnv = process.env,
 ): Promise<readonly DesktopToolchainProbeFailure[]> {
   const failures: DesktopToolchainProbeFailure[] = []
   const tar = await probeTar()
   if (tar !== undefined) failures.push({ tool: 'tar', detail: tar })
   if (platform === 'win32') failures.push(...await probeWindowsInstallerToolchain(environment))
+  if (platform === 'linux') failures.push(...await probeLinuxPackageToolchain())
   return failures
 }
 
@@ -92,7 +121,7 @@ export async function probeDesktopToolchain(
  * @returns Resolves when every probe passes.
  */
 export async function requireDesktopToolchain(
-  platform: 'darwin' | 'win32',
+  platform: 'darwin' | 'win32' | 'linux',
   environment: NodeJS.ProcessEnv = process.env,
 ): Promise<void> {
   const failures = await probeDesktopToolchain(platform, environment)

@@ -207,7 +207,7 @@ A production release publishes the product version and takes no `--build-version
 
 Version derivation does not change the fixed update channel or `nightly.yml` / `nightly-mac.yml` filenames. SemVer orders `0.1.6-alpha.1 < 0.1.6-alpha.1.20260916.1 < 0.1.6-alpha.2`, and a stable base's test version precedes that stable release. Clients only accept a greater version: replacing a feed cannot move an installed higher version to a lower corrected version. Such clients need manual installation; keep automatic downgrade disabled. The [version decision](../../.agents/notes/implemented/process/2026-09-16-desktop-release-version-derivation.md) explains why the channel does not supply the prerelease identifier.
 
-Packaging, upload, and manual macOS signature verification read `apps/desktop/.env.windows` or `.env.macos`, selected by target platform. Copy the [Windows template](.env.windows.example) or [macOS template](.env.macos.example) and fill in the local settings; Git ignores both local files, and packaged artifacts exclude them. Release fields come only from the target file, without fallback to system or shell variables; `PATH`, proxies, and build-tool settings remain inherited. The published version is an argument rather than a release field, and upload reads it from the completion record the packaging run wrote. Files use UTF-8 with optional BOM; relative certificate, SignTool, Apple API key, and keychain paths resolve from `apps/desktop`, values are not shell-expanded, and passwords containing `#` or spaces need quotes. CI also creates the target file before invoking packaging.
+Packaging, upload, and manual macOS signature verification read `apps/desktop/.env.windows`, `.env.macos`, or `.env.linux`, selected by target platform. Copy the [Windows template](.env.windows.example), [macOS template](.env.macos.example), or [Linux template](.env.linux.example) and fill in the local settings; Git ignores both local files, and packaged artifacts exclude them. Release fields come only from the target file, without fallback to system or shell variables; `PATH`, proxies, and build-tool settings remain inherited. The published version is an argument rather than a release field, and upload reads it from the completion record the packaging run wrote. Files use UTF-8 with optional BOM; relative certificate, SignTool, Apple API key, and keychain paths resolve from `apps/desktop`, values are not shell-expanded, and passwords containing `#` or spaces need quotes. CI also creates the target file before invoking packaging.
 
 Every package command checks the application ID, update origin, and mode-specific signing configuration before building or downloading, then probes the external tools the run will use: the archive reader, and on a Windows target the installer compiler. macOS checks the identity, Team ID, one complete notarization strategy, readable local `CSC_LINK` p12 file, explicit `CSC_KEY_PASSWORD`, and referenced API key and keychain files; Windows checks the public code-signing certificate, SignTool file, container name, and PIN format. Windows preparation-only and explicit unsigned builds do not require signing credentials. Configuration checks do not authenticate the PIN, log in to the token, unlock a keychain, or contact Apple; actual signing and notarization perform those checks. `--build-version auto` does contact the destination bucket, including under `--check`. Run the same checks separately:
 
@@ -227,11 +227,27 @@ Release automation uses fixed target commands so runtime preparation, dsh prepar
 pnpm run package:desktop:mac:arm64
 pnpm run package:desktop:mac:x64
 pnpm run package:desktop:win:x64
+pnpm run package:desktop:linux:x64
+pnpm run package:desktop:linux:arm64
 ```
 
-The macOS arm64 command requires Apple Silicon. The macOS x64 command runs on Intel macOS or Apple Silicon with Rosetta. The Windows x64 command requires Windows x64. Linux is not a supported Desktop release target.
+The macOS arm64 command requires Apple Silicon. The macOS x64 command runs on Intel macOS or Apple Silicon with Rosetta. The Windows x64 command requires Windows x64. Each Linux command requires a build host of its own architecture, because the packaged Electron runtime executes the payload and Host smoke checks during packaging; it builds deb and rpm with the bundled fpm plus the host's `rpmbuild`, `xz`, and `dpkg-deb`.
+
+Linux packages are distributed through ordinary system package channels rather than the managed update feed. They therefore carry no `app-update.yml`, no mandatory-update policy, and no signing or notarization step, and they have no `upload:*` command. Their `--dir` counterpart stops at `linux-unpacked`; the packaged executable is named `deepseek-harness`, and `runtime/cli/bin/dsh` launches the bundled CLI through it. The artifact names are `deepseek-harness-<version>-linux-amd64.deb` and `deepseek-harness-<version>-linux-x86_64.rpm` for x64, with `arm64` and `aarch64` for arm64. Linux has no native LibreOffice engine, so the Office conversion provider carries the WASM engine instead.
 
 Each target owns its packed package inputs, prepared runtime, package set, dsh tree, pnpm preparation state, unpacked application, update metadata, and final artifacts under `apps/desktop/.desktop-build/targets/<target>/`. The Electron archive cache remains shared under `.desktop-build/downloads` because every archive name includes its version, platform, and architecture and is verified before extraction. A target build never consumes another target's mutable preparation state.
+
+#### Linux support source
+
+Upstream ships no Linux packaging. This fork carries it directly, and `.github/linux-overlay/manifest.json` lists the exact files that constitute it. Each release build downloads the upstream source archive for one released `dsh-vX.Y.Z-rc.N` tag, copies those files over the extracted tree, and then packages it; the source is never merged and never synchronized by hand, because a newer upstream tag is simply a newer archive to overlay.
+
+[`release-desktop-linux.yml`](../../.github/workflows/release-desktop-linux.yml) runs [`.github/linux-overlay/apply.mjs`](../../.github/linux-overlay/apply.mjs) for that copy. `alpha` and `beta` tags are never selected. The workflow runs daily, stops immediately when a release for the newest rc tag already exists, and can be started by hand with a named tag or with `force` to rebuild a release that exists.
+
+The overlay is a bounded, reviewable change rather than a whole-tree merge, but it does supersede upstream edits to the listed files: when upstream changes one of them, the build prints a warning naming the file and continues. Reconcile such a file by hand when the upstream change matters. To see which files are involved, read the manifest:
+
+```sh
+python3 -c "import json;print('\n'.join(json.load(open('.github/linux-overlay/manifest.json'))['files']))"
+```
 
 ### Runtime file selection
 

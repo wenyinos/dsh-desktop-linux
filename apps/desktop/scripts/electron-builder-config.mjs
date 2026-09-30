@@ -51,7 +51,6 @@ export function createElectronBuilderConfig(
   preparedRuntimeVersion = undefined,
 ) {
   const appId = resolveDesktopAppId(env)
-  const policy = resolveDesktopPolicyEnvironment(env)
   const targetPlatform = env.DSH_DESKTOP_TARGET_PLATFORM
   const resolvedPlatform = targetPlatform ?? hostPlatform
   const resolvedArch = env.DSH_DESKTOP_TARGET_ARCH ?? hostArch
@@ -62,6 +61,14 @@ export function createElectronBuilderConfig(
   if (unsigned && resolvedPlatform !== 'win32') throw new Error('desktop package: unsigned builds require Windows')
   const packagesMacOS = targetPlatform === 'darwin' || (targetPlatform === undefined && hostPlatform === 'darwin')
   const packagesWindows = resolvedPlatform === 'win32'
+  const packagesLinux = resolvedPlatform === 'linux'
+  // fpm requires a maintainer and a project URL for deb/rpm metadata; the release settings may
+  // override the maintainer, and the package ident defaults to the product's command name.
+  const linuxMaintainer = env.DSH_DESKTOP_LINUX_MAINTAINER?.trim() || 'DeepSeek <support@deepseek.com>'
+  const linuxPackageName = env.DSH_DESKTOP_LINUX_PACKAGE_NAME?.trim() || 'deepseek-harness'
+  // Linux packages ship as deb/rpm through ordinary distribution rather than the managed
+  // update feed, so they carry neither a policy service origin nor an app-update.yml.
+  const policy = packagesLinux ? undefined : resolveDesktopPolicyEnvironment(env)
   if (resolvedPlatform === 'win32') installWindowsDirectoryInstaller()
   const macOSSigning = packagesMacOS ? resolveMacOSSigningEnvironment(env) : undefined
   if (packagesMacOS) resolveMacOSNotarizationEnvironment(env)
@@ -90,7 +97,7 @@ export function createElectronBuilderConfig(
   if (windowsSigner !== undefined) {
     installWindowsNsisBootstrapSigner({ sign: windowsSigner })
   }
-  const update = unsigned ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
+  const update = unsigned || packagesLinux ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
   if (preparedRuntime !== undefined) buildPaths.dsh = preparedRuntime
   // electron-builder merges extraMetadata into the packaged manifest, so a build version here reaches
   // the artifact names, the update feed, and the installed app.getVersion() the updater compares against.
@@ -103,6 +110,8 @@ export function createElectronBuilderConfig(
     extraMetadata: {
       dshDesktopAppId: appId,
       dshMandatoryUpdatePolicy: policy,
+      // fpm requires a project URL for deb/rpm metadata, and this manifest declares none.
+      ...packagesLinux ? { homepage: 'https://github.com/deepseek-ai/deepseek-harness' } : {},
       ...buildVersion === productVersion ? {} : { version: buildVersion },
       ...packaged === undefined ? {} : { dshBuildCommit: packaged.commit, dshBuildDirty: packaged.dirty },
     },
@@ -143,7 +152,9 @@ export function createElectronBuilderConfig(
     asarUnpack: unpack,
     extraResources: [
       { from: buildPaths.runtime, to: 'runtime' },
-      { from: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
+      // The About panel reads this beside the application resources on every packaged platform.
+      // Linux takes the unmodified 1104 px brand asset; macOS and Windows keep their prepared bitmaps.
+      { from: fileURLToPath(new URL(packagesLinux ? '../resources/icon.png' : '../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
       // Windows tray bitmaps; macOS keeps the Dock and ships no menu bar icon.
       ...(packagesWindows ? [{ from: fileURLToPath(new URL('../resources/tray-windows.ico', import.meta.url)), to: 'tray.ico' }] : []),
     ],
@@ -231,8 +242,25 @@ export function createElectronBuilderConfig(
       target: ['nsis'],
     },
     linux: {
+      // electron-builder derives the packaged executable from the package name, which is scoped
+      // here (`@deepseek-ai/dsh-desktop`); name it explicitly so the launcher, desktop entry, and
+      // packaged-runtime smoke all resolve the same binary.
+      executableName: 'deepseek-harness',
       category: 'Development',
-      target: ['AppImage'],
+      icon: fileURLToPath(new URL('../resources/icon.png', import.meta.url)),
+      maintainer: linuxMaintainer,
+      synopsis: 'DeepSeek Harness desktop application',
+      description: 'DeepSeek Harness desktop application bundling its own dsh runtime.',
+      target: ['deb', 'rpm'],
+    },
+    deb: {
+      packageName: linuxPackageName,
+      // Electron's Chromium sandbox and the bundled runtime need these at runtime.
+      depends: ['libgtk-3-0', 'libnotify4', 'libnss3', 'libxss1', 'libxtst6', 'xdg-utils', 'libatspi2.0-0', 'libsecret-1-0'],
+    },
+    rpm: {
+      packageName: linuxPackageName,
+      depends: ['gtk3', 'libnotify', 'nss', 'libXScrnSaver', 'libXtst', 'xdg-utils', 'at-spi2-core', 'libsecret'],
     },
     nsis: {
       installerSidebar: join(buildPaths.root, 'installer-ui', 'uninstaller-sidebar.bmp'),

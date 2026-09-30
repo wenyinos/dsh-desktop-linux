@@ -8,13 +8,23 @@ import { dirname, join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { downloadArtifact } from '@electron/get'
 import extractZip from 'extract-zip'
-import { resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
+import { resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths, desktopTargetPlatform } from './desktop-build-paths.mjs'
 import { preparePrimaryRuntime } from './prepare-primary-runtime.ts'
 import { prepareDesktopCli } from './prepare-cli.ts'
 import { prepareCommandLink } from './prepare-command-link.ts'
 
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
 const RUNTIME_ROOT = BUILD_PATHS.runtime
+
+/**
+ * Path segments from the extracted archive root to the Electron executable.
+ * @param platform - Target platform of the prepared distribution.
+ * @returns Segments relative to the extraction directory.
+ */
+function electronExecutableSegments(platform: 'darwin' | 'win32' | 'linux'): readonly string[] {
+  if (platform === 'darwin') return ['Electron.app', 'Contents', 'MacOS', 'Electron']
+  return [platform === 'win32' ? 'electron.exe' : 'electron']
+}
 
 function preparePnpm(): string {
   const require = createRequire(import.meta.url)
@@ -31,15 +41,14 @@ function preparePnpm(): string {
 async function main(): Promise<void> {
   const { values } = parseArgs({ options: { 'defer-primary-runtime-smoke': { type: 'boolean', default: false } } })
   const target = resolveDesktopBuildTarget()
-  const platform = target.startsWith('mac-') ? 'darwin' : 'win32'
-  const arch = target.endsWith('arm64') ? 'arm64' : 'x64'
+  const { platform, arch } = desktopTargetPlatform(target)
   const require = createRequire(import.meta.url)
   const { version } = require('electron/package.json') as { version: string }
   const archive = await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'download:electron',
     () => downloadArtifact({ version, platform, arch, artifactName: 'electron', cacheRoot: BUILD_PATHS.downloads }))
   rmSync(BUILD_PATHS.electron, { recursive: true, force: true })
   await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'extract:electron', () => extractZip(archive, { dir: BUILD_PATHS.electron }))
-  const executable = join(BUILD_PATHS.electron, platform === 'win32' ? 'electron.exe' : 'Electron.app/Contents/MacOS/Electron')
+  const executable = join(BUILD_PATHS.electron, ...electronExecutableSegments(platform))
   const nodeVersion = execFileSync(executable, ['-p', 'process.versions.node'], {
     encoding: 'utf8', env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
   }).trim()

@@ -7,9 +7,12 @@ import { createDesktopCos } from './desktop-cos.ts'
 import { resolveDesktopUploadConfig } from './desktop-auto-update-environment.mjs'
 import { loadDesktopPackageEnvironment } from './desktop-package-environment.mjs'
 import { createDesktopUploadPlan, type DesktopUploadPlan } from './desktop-upload-plan.ts'
+import { desktopTargetPlatform } from './desktop-build-paths.mjs'
 import { desktopReleaseTag, tagDesktopRelease } from './desktop-release-tag.ts'
 import { uploadDesktopRelease } from './desktop-upload-run.ts'
 
+// Upload publishes through the managed update feed, which serves macOS and Windows only;
+// Linux packages are distributed as deb/rpm and have no upload command.
 const SUPPORTED_TARGETS = new Set<DesktopPackageTargetName>(['mac-arm64', 'mac-x64', 'win-x64'])
 
 function targetName(value: string): DesktopPackageTargetName {
@@ -41,8 +44,7 @@ export function resolveCredentialUploadEnvironment(
   selected: 'test' | 'production', bucket: string,
   target: DesktopPackageTargetName,
 ): NodeJS.ProcessEnv {
-  const platform = target === 'win-x64' ? 'win32' : 'darwin'
-  const arch = target === 'mac-arm64' ? 'arm64' : 'x64'
+  const { platform, arch } = desktopTargetPlatform(target)
   const destination = resolveDesktopUploadConfig(fileEnvironment, platform, arch)
   if (destination.environment !== selected || destination.bucket !== bucket) {
     throw new Error('desktop upload: credential launcher deployment or bucket differs from the packaged release destination')
@@ -73,7 +75,7 @@ export async function uploadDesktopTarget(args: string[]): Promise<void> {
     throw new Error('desktop upload: expected exactly one target')
   }
   const name = targetName(target)
-  const fileEnvironment = loadDesktopPackageEnvironment(name === 'win-x64' ? 'win32' : 'darwin')
+  const fileEnvironment = loadDesktopPackageEnvironment(desktopTargetPlatform(name).platform)
   const launcher = values['credential-launcher'] === true
   if (launcher ? values.environment === undefined || values.bucket === undefined
     : values.environment !== undefined || values.bucket !== undefined) {

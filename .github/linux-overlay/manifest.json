@@ -1,0 +1,109 @@
+{
+  "authoredAgainst": "639ed015397290b3745d163aafe02ffee4aa3f84",
+  "files": {
+    ".gitignore": {
+      "base": "1be663118b2aa066404d5a3041a7e76b714cf09b07461fa2660f31404263729f",
+      "replaces": true
+    },
+    "apps/desktop/.env.linux.example": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/README.md": {
+      "base": "ba2d342cad42e91d6857a11652e87806df329a2565cc0073f1baf92893d88297",
+      "replaces": true
+    },
+    "apps/desktop/README.zh.md": {
+      "base": "c4b30449f5cc1a49ece2405d4ef038301f19c813ea28a45bd01b69ded547f680",
+      "replaces": true
+    },
+    "apps/desktop/cli/dsh-linux": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/package.json": {
+      "base": "eef6bc1131564aac2af0667487236edc5c1be721747b4ac81c9442937d34252c",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-auto-update-environment.d.mts": {
+      "base": "2eb7f3ba0c2412e951cfd67051dd84a89b136d311fb59ef4bb0a9b2d865572b8",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-auto-update-environment.mjs": {
+      "base": "18e713339e93bb29659b3042c8c62d9d56b55c0462ef227268449bc653e12617",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-build-paths.d.mts": {
+      "base": "6fa735816da0ab7ccb7efe29c51cc735c72d0dca9e70d608b3674957705b896a",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-build-paths.mjs": {
+      "base": "6776018342fbe8a9788ba39946ead02e8013246e9ec50b8f8c37a109bbca360e",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-build-version-discovery.ts": {
+      "base": "383505c401abca34884aea24b78d1d104add6b58c08703c78595b9e932009418",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-package-environment.d.mts": {
+      "base": "5c8a4c14adba51a05e1e22ffe3472b9a4a494158021d5da0e9ce8f2b8619d9ef",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-package-environment.mjs": {
+      "base": "8d7acbba7e63f0c71b713e259f0c9d0852b336e7b907cd10cbad03b33e836711",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-toolchain-preflight.ts": {
+      "base": "0216c9c622bdc8884331b33eb55fe883a536a57c3a660dcc5d8d645177283e91",
+      "replaces": true
+    },
+    "apps/desktop/scripts/desktop-upload-plan.ts": {
+      "base": "08e63331de54a1d4bb09b506cf4c525f11d6b9c253e3657e04e03f42faded4e2",
+      "replaces": true
+    },
+    "apps/desktop/scripts/electron-builder-config.mjs": {
+      "base": "1402156a2760de1ae1b79727344807ae7be002c62be6dd49ac202efb3c03fd8d",
+      "replaces": true
+    },
+    "apps/desktop/scripts/package-target.ts": {
+      "base": "5f0ba5cb9dec904097cb3c279b3b34cf8dc1a0de818285cccfaffe01391fefae",
+      "replaces": true
+    },
+    "apps/desktop/scripts/prepare-cli.ts": {
+      "base": "f51ba0a09eef7b609170548a163c40938331744e751b91d799533f51ffac0438",
+      "replaces": true
+    },
+    "apps/desktop/scripts/prepare-dsh.ts": {
+      "base": "7d426ad49930f5f0e2a956ab45f10c89be6559ae3d8b0b2600769eb79e9a926a",
+      "replaces": true
+    },
+    "apps/desktop/scripts/prepare-runtime.ts": {
+      "base": "5bd7d4c8906cb07d34b7075dad71913353b7424303cd198e56449f6bb278f4c4",
+      "replaces": true
+    },
+    "apps/desktop/scripts/smoke-packaged-runtime.ts": {
+      "base": "6b5f35f5d7f3dafd9cee33dbaff8370bd7b513591bf3e49052491712b6da94f0",
+      "replaces": true
+    },
+    "apps/desktop/scripts/upload-target.ts": {
+      "base": "8978238e548b06d0c452409b8b570b48bacf0da53d8f336eb91bbc9c213fb155",
+      "replaces": true
+    },
+    "apps/desktop/tests/desktop-auto-update-environment.spec.ts": {
+      "base": "0d94ef998389a14863adc8b7cc4abb76c79096ffa3731b03ff3ee598dcac0b59",
+      "replaces": true
+    },
+    "apps/desktop/tests/desktop-build-paths.spec.ts": {
+      "base": "9194dbb84e3af19fc9deef1103c485c10ba0b4115d03de846ad2ea51488e9001",
+      "replaces": true
+    },
+    "apps/desktop/tests/package-target.spec.ts": {
+      "base": "79b0c740f9479f3c3c57c15a2aafa2fef63e2a2f2982816bca15b48a9f3ce5a1",
+      "replaces": true
+    },
+    "package.json": {
+      "base": "a303ffb8994be8e7a874bc887db1abd47a77a6e08872e65f1d65281f43eab91b",
+      "replaces": true
+    }
+  }
+}
