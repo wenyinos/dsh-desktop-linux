@@ -235,18 +235,25 @@ jobs:
 
       # The Office engine resolves through the packaged module tree. The kit treats a directory
       # that exists without a usable manifest as an incomplete install rather than falling back
-      # to WASM, so this prints every such entry in the whole assembled application.
+      # to WASM, so this prints both the assembled tree and the archive's own path index.
       - name: Inspect the packaged Office engines
         if: always()
         run: |
           set -euo pipefail
           base="$SOURCE_ROOT/apps/desktop/.desktop-build/targets/${{ matrix.target }}"
-          echo "== every path naming a Linux Office engine under the target"
-          find "$base" -name '*libreoffice-kit-linux*' -maxdepth 12 2>/dev/null | head -20 || true
-          echo "== every path naming any Office engine, with type"
-          find "$base" -name '*libreoffice-kit-*' -maxdepth 12 -printf '%y %p\n' 2>/dev/null | sort -u | head -30 || true
-          echo "== node_modules directories that hold a scoped @deepseek-ai"
-          find "$base" -maxdepth 6 -type d -path '*node_modules/@deepseek-ai' 2>/dev/null | head -10 || true
+          echo "== filesystem entries naming an Office engine"
+          find "$base" -name '*libreoffice-kit*' -maxdepth 12 -printf '%y %p\n' 2>/dev/null | sort -u | head -40 || true
+          echo "== archive header entries naming an Office engine"
+          archive="$base/artifacts/linux-unpacked/resources/app.asar"
+          if [ -f "$archive" ]; then
+            # An ASAR begins with a JSON index of every packed path, so the header alone shows
+            # whether a name reached the archive even when it is absent from the filesystem.
+            head -c 4194304 "$archive" | grep -ao 'libreoffice-kit-[a-z0-9._-]*' | sort -u | head -20
+          else
+            echo "   (no app.asar)"
+          fi
+          echo "== dsh tree before packing, as recorded by the run"
+          find "$base/dsh/node_modules/@deepseek-ai" -maxdepth 1 -name 'libreoffice*' -printf '%y %f\n' 2>/dev/null | sort || true
 
       - name: Collect packages
         if: always()
