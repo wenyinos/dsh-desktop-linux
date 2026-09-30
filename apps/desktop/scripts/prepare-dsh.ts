@@ -2,7 +2,7 @@
 
 import { packagingStep } from './packaging-step.mjs'
 import { spawn } from 'node:child_process'
-import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { delimiter, join, relative, resolve } from 'node:path'
 import { desktopNodeEnvironment } from '../src/node-environment.ts'
@@ -52,6 +52,30 @@ function manifestVersion(path: string, subject: string): string {
   const manifest = JSON.parse(readFileSync(path, 'utf8')) as { version?: unknown }
   if (typeof manifest.version !== 'string') throw new Error(`desktop runtime: ${subject} has no version`)
   return manifest.version
+}
+
+/**
+ * Leave only the selected Office engine in the packaged runtime.
+ *
+ * The file policy omits unselected engines as it copies, but a directory can still arrive
+ * without a usable manifest. The kit reads any directory carrying a native engine's name as a
+ * broken install of that engine rather than falling back to WASM, so a leftover directory
+ * turns a working WASM runtime into a startup failure. Removing it here keeps the packaged
+ * runtime's content equal to the engine the product declares.
+ * @param runtimeRoot - Materialized dsh runtime directory.
+ * @param engine - Selected engine suffix, such as `wasm`.
+ * @returns Names of the removed engine directories.
+ */
+function pruneUnselectedOfficeEngines(runtimeRoot: string, engine: string): string[] {
+  const scoped = join(runtimeRoot, 'node_modules', '@deepseek-ai')
+  const selected = `libreoffice-kit-${engine}`
+  const removed: string[] = []
+  for (const entry of readdirSync(scoped, { withFileTypes: true })) {
+    if (!entry.name.startsWith('libreoffice-kit-') || entry.name === selected) continue
+    rmSync(join(scoped, entry.name), { recursive: true, force: true })
+    removed.push(entry.name)
+  }
+  return removed
 }
 
 function desktopRelease(): DesktopRelease {
@@ -157,6 +181,10 @@ async function main(): Promise<void> {
     if (!existsSync(join(DSH_OUTPUT_ROOT, 'node_modules', '@deepseek-ai', `libreoffice-kit-${officeEngine}`, 'prebuilds.json'))) {
       throw new Error(`desktop runtime: missing required LibreOffice engine ${officeEngine}`)
     }
+    await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:prune-office-engines', async () => {
+      const removed = pruneUnselectedOfficeEngines(DSH_OUTPUT_ROOT, officeEngine)
+      process.stdout.write(`desktop runtime: Office engine ${officeEngine}; removed ${removed.length === 0 ? 'no other engines' : removed.join(', ')}\n`)
+    })
     if (process.platform === 'darwin') {
       await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'sign:dsh-native', () => signMacOSRuntime(DSH_OUTPUT_ROOT, resolveDesktopAppId(process.env), resolveMacOSSigningEnvironment(process.env), target.arch, join(BUILD_PATHS.root, 'signature-cache')))
       await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'sign:primary-native', () => signMacOSRuntime(join(RUNTIME_ROOT, 'primary-runtime'), resolveDesktopAppId(process.env), resolveMacOSSigningEnvironment(process.env), target.arch, join(BUILD_PATHS.root, 'signature-cache')))

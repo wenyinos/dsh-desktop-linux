@@ -233,34 +233,20 @@ jobs:
             find "$root" -name events.jsonl -print -exec tail -n 40 {} \; || true
           fi
 
-      # The Office engine resolves through the packaged module tree, and its failure mode depends
-      # on which engine directories exist there. This prints that tree so a failure names it
-      # rather than only reporting that a package looked incomplete.
+      # The Office engine resolves through the packaged module tree. The kit treats a directory
+      # that exists without a usable manifest as an incomplete install rather than falling back
+      # to WASM, so this prints every such entry in the whole assembled application.
       - name: Inspect the packaged Office engines
         if: always()
         run: |
           set -euo pipefail
           base="$SOURCE_ROOT/apps/desktop/.desktop-build/targets/${{ matrix.target }}"
-          for root in "$base/dsh/node_modules" "$base/artifacts/linux-unpacked/resources/app.asar.unpacked/dsh/node_modules"; do
-            echo "== ${root}"
-            if [ -d "$root/@deepseek-ai" ]; then
-              ls -la "$root/@deepseek-ai/" | grep -i libreoffice || echo "   (no libreoffice entries)"
-            else
-              echo "   (absent)"
-            fi
-          done
-          archive="$base/artifacts/linux-unpacked/resources/app.asar"
-          echo "== asar entries matching libreoffice"
-          if [ -f "$archive" ]; then
-            (cd "$SOURCE_ROOT" && node -e '
-              const asar = require("@electron/asar")
-              const entries = asar.listPackage(process.argv[1]).filter((path) => path.includes("libreoffice"))
-              const engines = new Set(entries.map((path) => /libreoffice-kit[^/\\]*/.exec(path)?.[0]).filter(Boolean))
-              console.log("engine directories in asar:", [...engines].join(", ") || "(none)")
-            ' "$archive") || echo "   (asar inspection unavailable)"
-          else
-            echo "   (no app.asar)"
-          fi
+          echo "== every path naming a Linux Office engine under the target"
+          find "$base" -name '*libreoffice-kit-linux*' -maxdepth 12 2>/dev/null | head -20 || true
+          echo "== every path naming any Office engine, with type"
+          find "$base" -name '*libreoffice-kit-*' -maxdepth 12 -printf '%y %p\n' 2>/dev/null | sort -u | head -30 || true
+          echo "== node_modules directories that hold a scoped @deepseek-ai"
+          find "$base" -maxdepth 6 -type d -path '*node_modules/@deepseek-ai' 2>/dev/null | head -10 || true
 
       - name: Collect packages
         if: always()
