@@ -141,11 +141,40 @@ jobs:
             --output "$RUNNER_TEMP/upstream.tar.gz"
           tar -xzf "$RUNNER_TEMP/upstream.tar.gz" -C "$source" --strip-components=1
           echo "SOURCE_ROOT=$source" >> "$GITHUB_ENV"
-          echo "Extracted ${TAG}:"
-          sed -n '1,3p' "$source/package.json"
+          echo "Extracted ${TAG}."
+
+      # Packaging records the commit it built from, and an archive carries no history. Fetching
+      # the tag supplies that commit and resets the index to its tree; the extracted files are
+      # already that same tree, so only the Linux support below shows as a modification. The
+      # artifact therefore records the real upstream commit while staying reproducible from it.
+      - name: Identify the upstream commit
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git init --quiet "$SOURCE_ROOT"
+          git -C "$SOURCE_ROOT" remote add origin "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          git -C "$SOURCE_ROOT" fetch --quiet --depth 1 origin "refs/tags/${TAG}"
+          git -C "$SOURCE_ROOT" reset --mixed --quiet FETCH_HEAD
+          echo "Upstream commit: $(git -C "$SOURCE_ROOT" rev-parse HEAD)"
+          # The archive is the tag's own tree, so it should match the index reset above. A
+          # difference means the build is not starting from the tag's full sources, which is
+          # worth naming; it does not stop the build, because the Linux support applied next is
+          # itself a modification and the artifact records that it was built from one.
+          differences=$(git -C "$SOURCE_ROOT" status --porcelain | wc -l)
+          if [ "${differences}" -ne 0 ]; then
+            echo "::warning title=Archive differs from the tag tree::${differences} path(s) in the downloaded archive differ from ${TAG}; the build records itself as modified."
+            git -C "$SOURCE_ROOT" status --short | head -20
+          fi
 
       - name: Apply the Linux support
         run: node "$GITHUB_WORKSPACE/.github/linux-overlay/apply.mjs" --source "$GITHUB_WORKSPACE" --target "$SOURCE_ROOT"
+
+      - name: Confirm the applied revision
+        run: |
+          set -euo pipefail
+          echo "Building commit $(git -C "$SOURCE_ROOT" rev-parse HEAD)"
+          git -C "$SOURCE_ROOT" status --short
 
       - uses: pnpm/action-setup@v4
         with:

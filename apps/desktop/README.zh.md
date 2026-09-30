@@ -241,7 +241,7 @@ Linux 包通过常规系统包渠道分发，而非托管更新 feed。因此它
 
 #### Linux 支持来源
 
-上游不提供 Linux 打包。本 fork 直接承载该支持，`.github/linux-overlay/manifest.json` 列出构成它的确切文件。每次发布构建会下载某个已发布 `dsh-vX.Y.Z-rc.N` tag 的上游源码压缩包，把这些文件复制覆盖到解包后的源码树上，再进行打包；源码不做合并，也无需手动同步，因为更新的上游 tag 只是一个需要重新覆盖的新压缩包。
+上游不提供 Linux 打包。本 fork 直接承载该支持，`.github/linux-overlay/manifest.json` 列出 Linux 构建在上游之上所需的文件。每次发布构建会下载某个已发布 `dsh-vX.Y.Z-rc.N` tag 的上游源码压缩包，把这些文件复制覆盖到解包后的源码树上，再进行打包；源码不做合并，也无需手动同步，因为更新的上游 tag 只是一个需要重新覆盖的新压缩包。清单只包含构建输入，因此日常文档改动不会报告为上游漂移。
 
 [`release-desktop-linux.yml`](../../.github/workflows/release-desktop-linux.yml) 调用 [`.github/linux-overlay/apply.mjs`](../../.github/linux-overlay/apply.mjs) 完成该复制。`alpha` 与 `beta` tag 永不会被选中。工作流每日运行，若最新 rc tag 已有对应发布则立即停止；也可以手动指定 tag 启动，或用 `force` 重建已存在的发布。
 

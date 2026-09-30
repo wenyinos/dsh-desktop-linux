@@ -9,14 +9,6 @@
       "base": null,
       "replaces": false
     },
-    "apps/desktop/README.md": {
-      "base": "ba2d342cad42e91d6857a11652e87806df329a2565cc0073f1baf92893d88297",
-      "replaces": true
-    },
-    "apps/desktop/README.zh.md": {
-      "base": "c4b30449f5cc1a49ece2405d4ef038301f19c813ea28a45bd01b69ded547f680",
-      "replaces": true
-    },
     "apps/desktop/cli/dsh-linux": {
       "base": null,
       "replaces": false

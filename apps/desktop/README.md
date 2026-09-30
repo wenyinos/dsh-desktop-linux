@@ -239,11 +239,11 @@ Each target owns its packed package inputs, prepared runtime, package set, dsh t
 
 #### Linux support source
 
-Upstream ships no Linux packaging. This fork carries it directly, and `.github/linux-overlay/manifest.json` lists the exact files that constitute it. Each release build downloads the upstream source archive for one released `dsh-vX.Y.Z-rc.N` tag, copies those files over the extracted tree, and then packages it; the source is never merged and never synchronized by hand, because a newer upstream tag is simply a newer archive to overlay.
+Upstream ships no Linux packaging. This fork carries it directly, and `.github/linux-overlay/manifest.json` lists the files a Linux build needs on top of upstream. Each release build downloads the upstream source archive for one released `dsh-vX.Y.Z-rc.N` tag, copies those files over the extracted tree, and packages it; the source is never merged and never synchronized by hand, because a newer upstream tag is simply a newer archive to overlay. The manifest holds build inputs only, so ordinary documentation edits never report as upstream drift.
 
 [`release-desktop-linux.yml`](../../.github/workflows/release-desktop-linux.yml) runs [`.github/linux-overlay/apply.mjs`](../../.github/linux-overlay/apply.mjs) for that copy. `alpha` and `beta` tags are never selected. The workflow runs daily, stops immediately when a release for the newest rc tag already exists, and can be started by hand with a named tag or with `force` to rebuild a release that exists.
 
-The overlay is a bounded, reviewable change rather than a whole-tree merge, but it does supersede upstream edits to the listed files: when upstream changes one of them, the build prints a warning naming the file and continues. Reconcile such a file by hand when the upstream change matters. To see which files are involved, read the manifest:
+The overlay supersedes upstream edits to the files it lists, so the build warns when upstream changed one and continues. Reconcile such a file by hand when the upstream change matters. To list the files involved:
 
 ```sh
 python3 -c "import json;print('\n'.join(json.load(open('.github/linux-overlay/manifest.json'))['files']))"
