@@ -288,6 +288,12 @@ jobs:
     if: needs.resolve.outputs.build == 'true'
     runs-on: ubuntu-24.04
     steps:
+      # The release notes generator lives in this repository, not in the packaged artifacts.
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          clean: true
+
       - uses: actions/download-artifact@v8
         with:
           pattern: deepseek-harness-linux-*
@@ -311,14 +317,18 @@ jobs:
           TAG: ${{ needs.resolve.outputs.tag }}
           VERSION: ${{ needs.resolve.outputs.version }}
           FORCE: ${{ inputs.force }}
+          UPSTREAM: ${{ env.UPSTREAM_REPOSITORY }}
         run: |
           set -euo pipefail
+          notes="$RUNNER_TEMP/release-notes.md"
+          node "$GITHUB_WORKSPACE/.github/linux-overlay/release-notes.mjs" \
+            "${TAG}" "${VERSION}" "${UPSTREAM}" "${GITHUB_REPOSITORY}" > "$notes"
           if [ "${FORCE}" = "true" ]; then
             gh release delete "${TAG}" --repo "${GITHUB_REPOSITORY}" --cleanup-tag --yes || true
           fi
           gh release create "${TAG}" \
             --repo "${GITHUB_REPOSITORY}" \
             --title "DeepSeek Harness ${VERSION} (Linux)" \
-            --notes "Linux deb and rpm packages built from the upstream ${TAG} source archive with this fork's Linux support applied." \
+            --notes-file "$notes" \
             packages/*
           echo "Published ${TAG}."

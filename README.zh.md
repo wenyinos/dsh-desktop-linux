@@ -2,6 +2,16 @@
 
 [English](README.md) | 中文
 
+> ## 本仓库只打包 Linux
+>
+> **这不是上游项目。** 本仓库只有一个用途：构建上游未提供的 Linux 桌面安装包（`.deb` 与 `.rpm`）。这里不开发任何应用代码。
+>
+> - **源码与项目文档**：[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)。本仓库发布的每个源文件都来自上游已发布的 tag。
+> - **全平台下载（含 Linux）**：[上游发布页](https://github.com/deepseek-ai/deepseek-harness/releases)。除非确实需要本仓库的 Linux 安装包，请优先使用上游。
+> - **本仓库增加的内容**：仅 Linux 打包支持，在构建时叠加到上游源码压缩包之上。参见 [Linux 支持来源](apps/desktop/README.zh.md#linux-support-source)。
+>
+> Linux 安装包发布在[本仓库的 releases](https://github.com/wenyinos/dsh-desktop-linux/releases)，未签名，且不包含应用内更新；升级请安装更新的包。
+
 DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的开源 agent harness（智能体框架）。
 
 它构建于**一切皆插件**的架构之上，由 [Cordis](https://github.com/cordiverse/cordis) 驱动，其设计参见论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512)。

@@ -239,6 +239,8 @@ Linux 包通过常规系统包渠道分发，而非托管更新 feed。因此它
 
 每个目标都在 `apps/desktop/.desktop-build/targets/<target>/` 下持有自己的打包输入、已准备运行时、包集合、dsh 依赖树、pnpm 准备状态、未打包应用、更新元数据和最终产物。Electron 归档缓存继续由 `.desktop-build/downloads` 共享，因为每个归档文件名都包含版本、平台和架构，并且在解包前经过验证。目标构建绝不读取其他目标的可变准备状态。
 
+<a id="linux-support-source"></a>
+
 #### Linux 支持来源
 
 上游不提供 Linux 打包。本 fork 直接承载该支持，`.github/linux-overlay/manifest.json` 列出 Linux 构建在上游之上所需的文件。每次发布构建会下载某个已发布 `dsh-vX.Y.Z-rc.N` tag 的上游源码压缩包，把这些文件复制覆盖到解包后的源码树上，再进行打包；源码不做合并，也无需手动同步，因为更新的上游 tag 只是一个需要重新覆盖的新压缩包。清单只包含构建输入，因此日常文档改动不会报告为上游漂移。

@@ -42,8 +42,11 @@
   en: 4cd8a8da6977928d
   zh: 9f624855a2edac37
 /deepseek-harness-desktop/package/release-versions:
-  en: f461b255133384cc
-  zh: 2b9db718f22fdd04
+  en: 90145f512d81dbe6
+  zh: ffe1e27f87b20859
+/deepseek-harness-desktop/package/release-versions/linux-support-source:
+  en: 8aa8ed11ae4fb2a0
+  zh: 96103b72c8e0871f
 /deepseek-harness-desktop/package/runtime-file-selection:
   en: f0e345fd89868803
   zh: fd2c775ad23fa2f0
