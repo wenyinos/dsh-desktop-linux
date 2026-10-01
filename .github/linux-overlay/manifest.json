@@ -57,6 +57,10 @@
       "base": "1402156a2760de1ae1b79727344807ae7be002c62be6dd49ac202efb3c03fd8d",
       "replaces": true
     },
+    "apps/desktop/scripts/office-engine-presence-fixup.ts": {
+      "base": null,
+      "replaces": false
+    },
     "apps/desktop/scripts/package-target.ts": {
       "base": "5f0ba5cb9dec904097cb3c279b3b34cf8dc1a0de818285cccfaffe01391fefae",
       "replaces": true
@@ -88,6 +92,10 @@
     "apps/desktop/tests/desktop-build-paths.spec.ts": {
       "base": "9194dbb84e3af19fc9deef1103c485c10ba0b4115d03de846ad2ea51488e9001",
       "replaces": true
+    },
+    "apps/desktop/tests/office-engine-presence-fixup.spec.ts": {
+      "base": null,
+      "replaces": false
     },
     "apps/desktop/tests/package-target.spec.ts": {
       "base": "79b0c740f9479f3c3c57c15a2aafa2fef63e2a2f2982816bca15b48a9f3ce5a1",

@@ -40,6 +40,16 @@ function sha256(path) {
  */
 export function applyOverlay(source, target) {
   const manifest = JSON.parse(readFileSync(join(OVERLAY_ROOT, 'manifest.json'), 'utf8'))
+  // A file this support adds must exist in the source tree, or the build would silently compile
+  // against a tree that is missing part of the support.
+  const absent = Object.keys(manifest.files).filter(path => sha256(join(source, path)) === null)
+  if (absent.length > 0) {
+    throw new Error([
+      `linux overlay: ${String(absent.length)} listed file(s) are missing from ${source}.`,
+      ...absent.map(path => `  ${path}`),
+      'A file the Linux support adds belongs in the manifest the moment it is added to the repository.',
+    ].join('\n'))
+  }
   const copied = []
   const drifted = []
   for (const [path, entry] of Object.entries(manifest.files)) {
