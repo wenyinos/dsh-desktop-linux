@@ -237,6 +237,8 @@ macOS arm64 命令要求 Apple Silicon。macOS x64 命令可以在 Intel macOS �
 
 Linux 包通过常规系统包渠道分发，而非托管更新 feed。因此它们不携带 `app-update.yml`，不包含强制更新策略，也没有签名或公证步骤，且没有 `upload:*` 命令。对应的 `--dir` 命令停在 `linux-unpacked`；打包后的可执行文件名为 `deepseek-harness`，`runtime/cli/bin/dsh` 通过它启动捆绑的 CLI。产物名为 x64 的 `deepseek-harness-<version>-linux-amd64.deb` 与 `deepseek-harness-<version>-linux-x86_64.rpm`，arm64 对应 `arm64` 与 `aarch64`。Linux 没有原生 LibreOffice 引擎，因此 Office 转换提供者改用 WASM 引擎。
 
+有两项能力仅限 macOS 与 Windows，Linux 包不具备。**从应用菜单安装 `dsh` 命令**需要 macOS 的软链助手或 Windows 的 `PATH` 更新程序，因此该菜单项不存在，安装包也不会把 `dsh` 放入 `PATH`；捆绑的 CLI 仍可通过 `resources/runtime/cli/bin/dsh` 调用，且应用自带 Node 与 pnpm，无需另行安装。**自动更新**需要上文所述的 electron-updater feed。插件管理不受影响，在所有平台都可在应用内正常使用。
+
 每个目标都在 `apps/desktop/.desktop-build/targets/<target>/` 下持有自己的打包输入、已准备运行时、包集合、dsh 依赖树、pnpm 准备状态、未打包应用、更新元数据和最终产物。Electron 归档缓存继续由 `.desktop-build/downloads` 共享，因为每个归档文件名都包含版本、平台和架构，并且在解包前经过验证。目标构建绝不读取其他目标的可变准备状态。
 
 <a id="linux-support-source"></a>
