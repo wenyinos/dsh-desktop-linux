@@ -64,12 +64,13 @@ function asarPaths(archivePath) {
 function describe(path) {
   let stats
   try {
+    // Electron's archive shim answers a missing path with null where Node answers undefined.
     stats = lstatSync(path, { throwIfNoEntry: false })
   }
   catch (error) {
     return `unreadable (${error.code})`
   }
-  if (stats === undefined) return undefined
+  if (stats === undefined || stats === null) return undefined
   if (stats.isSymbolicLink()) {
     try {
       return `symlink -> ${readlinkSync(path)}`
