@@ -242,14 +242,19 @@ jobs:
         run: |
           set -euo pipefail
           base="$SOURCE_ROOT/apps/desktop/.desktop-build/targets/${{ matrix.target }}"
+          # electron-builder appends the architecture unless it is the platform default.
+          unpacked="$base/artifacts/linux-unpacked"
+          [ -d "$unpacked" ] || unpacked="$base/artifacts/linux-${{ matrix.arch }}-unpacked"
+          echo "== assembled application: $unpacked"
+          ls -la "$unpacked/resources" 2>/dev/null | head -10 || echo "   (no resources directory)"
           echo "== filesystem entries naming an Office engine"
           find "$base" -name '*libreoffice-kit*' -printf '%y %p\n' 2>/dev/null | sort -u | head -30 || true
           echo "== the packaged runtime's own view"
-          ELECTRON_RUN_AS_NODE=1 "$base/artifacts/linux-unpacked/deepseek-harness" \
+          ELECTRON_RUN_AS_NODE=1 "$unpacked/deepseek-harness" \
             "$GITHUB_WORKSPACE/.github/linux-overlay/probe-office-engine.mjs" \
-            "$base/artifacts/linux-unpacked/resources/app.asar/dsh/node_modules/@deepseek-ai/libreoffice-kit/lib/index.js" \
+            "$unpacked/resources/app.asar/dsh/node_modules/@deepseek-ai/libreoffice-kit/lib/index.js" \
             "@deepseek-ai/libreoffice-kit-linux-${{ matrix.arch }}-glibc" \
-            "$base/artifacts/linux-unpacked/resources/app.asar" \
+            "$unpacked/resources/app.asar" \
             || echo "   (probe unavailable)"
 
       - name: Collect packages
