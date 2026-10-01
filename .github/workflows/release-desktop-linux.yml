@@ -47,6 +47,14 @@ jobs:
       version: ${{ steps.select.outputs.version }}
       build: ${{ steps.select.outputs.build }}
     steps:
+      # Full history: the manifest coverage check compares against the upstream revision the
+      # manifest records, and a shallow clone would not contain it.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
       - name: Select the newest upstream rc tag
         id: select
         env:
@@ -87,6 +95,29 @@ jobs:
             echo "build=true" >> "$GITHUB_OUTPUT"
             echo "Selected ${tag}; not packaged yet."
           fi
+
+      # Every file this fork changes must be listed or excluded, or the build receives an
+      # upstream tree missing part of the Linux support and fails minutes into packaging.
+      - name: Verify the overlay covers every change
+        if: steps.select.outputs.build == 'true'
+        run: node .github/linux-overlay/verify-manifest.mjs "$GITHUB_WORKSPACE"
+
+      # Applying the overlay to the selected tag catches a stale manifest before the build:
+      # a file upstream renamed or removed cannot be replaced, and that is cheaper to learn here.
+      - name: Verify the overlay applies to the selected tag
+        if: steps.select.outputs.build == 'true'
+        env:
+          TAG: ${{ steps.select.outputs.tag }}
+        run: |
+          set -euo pipefail
+          upstream="$RUNNER_TEMP/upstream-check"
+          git init --quiet "$upstream"
+          git -C "$upstream" fetch --quiet --depth 1 \
+            "https://github.com/${UPSTREAM_REPOSITORY}.git" "refs/tags/${TAG}"
+          git -C "$upstream" checkout --quiet FETCH_HEAD
+          node "$GITHUB_WORKSPACE/.github/linux-overlay/apply.mjs" \
+            --source "$GITHUB_WORKSPACE" --target "$upstream"
+          echo "The overlay applies cleanly to ${TAG}."
 
   # deb and rpm are assembled natively on the architecture they target: the packaged Electron
   # runtime is executed by the payload and Host smoke checks during packaging, which cannot run

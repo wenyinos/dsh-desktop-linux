@@ -56,7 +56,7 @@ Fedora / RHEL / openSUSE：
 
 ${installInstructions('rpm', version)}
 
-安装后从应用菜单启动，或在终端运行 \`deepseek-harness\`。捆绑的 \`dsh\` 命令行未加入 \`PATH\`，完整路径为 \`"/opt/DeepSeek Harness/resources/runtime/cli/bin/dsh"\`。
+安装后从应用菜单启动。命令行界面以 \`dsh\` 提供，安装包已将其放入 \`PATH\`，直接在终端运行即可。
 
 ## 本次更新 / What's new
 
@@ -66,7 +66,7 @@ ${installInstructions('rpm', version)}
 
 - 安装包未签名，首次安装时系统可能提示来源未知。
 - Linux 包通过系统包管理器分发，不包含应用内自动更新；升级请安装新版本包。
-- 菜单栏的「安装 dsh 命令」仅在 macOS 与 Windows 提供，Linux 包没有该入口；插件管理不受影响，可在应用内正常使用。
+- 安装包装入 \`dsh\` 命令与桌面图标。菜单栏的「安装 dsh 命令」入口仅在 macOS 与 Windows 提供，Linux 不需要它；插件管理在所有平台都可在应用内使用。
 - 由 [${fork}](${self}/actions/workflows/release-desktop-linux.yml) 自动构建。
 
 **完整变更 / Full Changelog**：[${tag}](${upstream}/releases/tag/${tag})
