@@ -1,0 +1,62 @@
+# Publish the Linux packaging site for this fork.
+#
+# The site is static and lives in `site/`; it introduces the Linux packages this repository
+# builds, and nothing else about the upstream project. Deploying it is independent of the
+# packaging workflow, so the two never wait on each other.
+name: Deploy site
+
+on:
+  push:
+    branches: [master]
+    # Only a change to the site needs a deployment.
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  # A deployment in flight finishes; a later one queues rather than cancelling it.
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy site
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Fail when a referenced asset is missing
+        run: |
+          set -euo pipefail
+          # The page renders identically with a broken image, so a missing asset would only
+          # show up to a reader. Every local reference is checked here instead.
+          missing=0
+          for asset in $(grep -oE '(src|href)="[^"]+"' site/index.html site/poster.html \
+            | sed -E 's/.*="([^"]+)"/\1/' | grep -vE '^(https?:|#|mailto:)' | sort -u); do
+            if [ ! -e "site/${asset}" ]; then
+              echo "missing asset: site/${asset} (referenced as ${asset})" >&2
+              missing=1
+            fi
+          done
+          if [ "${missing}" -ne 0 ]; then exit 1; fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

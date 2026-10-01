@@ -160,6 +160,7 @@
     ".github/linux-overlay/probe-office-engine.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".github/linux-overlay/release-notes.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".github/linux-overlay/verify-manifest.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
+    ".github/workflows/pages.yml": "Site deployment: it runs from this repository and is never copied onto the upstream tree.",
     ".github/workflows/release-desktop-linux.yml": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".zcodeignore": "Agent tooling state that must not be committed; the repository ignores it.",
     "README.i18n.yaml": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
@@ -167,6 +168,10 @@
     "README.zh.md": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
     "apps/desktop/README.i18n.yaml": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
     "apps/desktop/README.md": "Documentation for this fork; not a build input.",
-    "apps/desktop/README.zh.md": "Documentation for this fork; not a build input."
+    "apps/desktop/README.zh.md": "Documentation for this fork; not a build input.",
+    "site/assets/icon.svg": "Site content for this fork; the build reads none of it.",
+    "site/assets/poster.png": "Site content for this fork; the build reads none of it.",
+    "site/index.html": "Site content for this fork; the build reads none of it.",
+    "site/poster.html": "Site content for this fork; the build reads none of it."
   }
 }

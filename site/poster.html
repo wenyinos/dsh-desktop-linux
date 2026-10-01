@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DSH Linux Desktop 打包</title>
+<style>
+  /* Rendered to assets/poster.png at 1200x1800. Regenerate after editing this file:
+       google-chrome --headless --disable-gpu --hide-scrollbars --no-sandbox \
+         --force-device-scale-factor=2 --window-size=1200,1800 \
+         --screenshot=assets/poster.png "file://$PWD/poster.html"
+     Repository names appear as plain text rather than links. Fonts are those present on the
+     render host. */
+  @page { size: 1200px 1800px; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 1800px; }
+  body {
+    font-family: "Noto Sans CJK SC", "Noto Sans CJK", "Source Han Sans SC", sans-serif;
+    background: linear-gradient(160deg, #0F1115 0%, #1C2434 55%, #131A28 100%);
+    color: #FBFBFB;
+    -webkit-font-smoothing: antialiased;
+    padding: 72px 68px 56px;
+    display: flex;
+    flex-direction: column;
+  }
+  .glow {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(760px 420px at 12% -6%, rgba(212,219,233,.16), transparent 62%),
+      radial-gradient(620px 380px at 108% 8%, rgba(225,230,238,.10), transparent 60%);
+    pointer-events: none;
+  }
+  .stack { position: relative; display: flex; flex-direction: column; height: 100%; }
+
+  header { display: flex; align-items: center; gap: 30px; }
+  header img { width: 104px; height: 104px; border-radius: 24px; box-shadow: 0 12px 34px rgba(0,0,0,.45); }
+  .titles h1 { font-size: 56px; font-weight: 700; letter-spacing: .5px; }
+  .titles p { margin-top: 10px; font-size: 24px; color: #D4DBE9; }
+
+  .badge {
+    margin-top: 34px; align-self: flex-start;
+    font-size: 20px; letter-spacing: .6px;
+    color: #0F1115; background: #D4DBE9;
+    padding: 9px 20px; border-radius: 999px; font-weight: 600;
+  }
+
+  .lede { margin-top: 34px; font-size: 26px; line-height: 1.66; color: #E1E6EE; max-width: 1010px; }
+  .lede b { color: #FBFBFB; }
+
+  section { margin-top: 52px; }
+  h2 {
+    font-size: 26px; font-weight: 600; letter-spacing: .8px;
+    padding-bottom: 13px; border-bottom: 2px solid rgba(212,219,233,.26);
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  h2 span { font-size: 18px; color: #93A0B8; font-weight: 400; letter-spacing: .4px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; margin-top: 24px; }
+  .cell {
+    background: rgba(251,251,251,.055); border: 1px solid rgba(212,219,233,.16);
+    border-radius: 15px; padding: 21px 23px;
+  }
+  .cell .k { font-size: 24px; font-weight: 600; }
+  .cell .v { font-size: 18px; color: #A9B6CC; margin-top: 9px; line-height: 1.5; }
+
+  ul.plain { list-style: none; margin-top: 22px; }
+  ul.plain li {
+    font-size: 21px; line-height: 1.5; color: #D4DBE9;
+    padding-left: 30px; position: relative; margin-bottom: 15px;
+  }
+  ul.plain li::before { content: "—"; position: absolute; left: 0; color: #7C89A0; }
+  ul.plain li b { color: #FBFBFB; font-weight: 600; }
+
+  pre {
+    margin-top: 24px; font-family: "Noto Sans Mono CJK SC", "Noto Sans Mono", monospace;
+    font-size: 19px; line-height: 1.8; color: #E1E6EE;
+    background: rgba(0,0,0,.34); border: 1px solid rgba(212,219,233,.16);
+    border-radius: 15px; padding: 22px 26px; white-space: pre; overflow: hidden;
+  }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  ul.list { list-style: none; margin-top: 22px; }
+  ul.list li {
+    font-size: 20px; line-height: 1.48; color: #D4DBE9; padding-left: 28px;
+    position: relative; margin-bottom: 14px;
+  }
+  ul.list.yes li::before { content: "✓"; position: absolute; left: 0; color: #8FD3A8; font-weight: 700; }
+  ul.list.no li::before { content: "×"; position: absolute; left: 0; color: #C98A8A; font-weight: 700; }
+
+  footer {
+    margin-top: auto; padding-top: 30px; border-top: 2px solid rgba(212,219,233,.26);
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;
+  }
+  footer .repo {
+    font-size: 26px; font-weight: 600; color: #FBFBFB; letter-spacing: .4px;
+    font-family: "Noto Sans Mono CJK SC", monospace;
+  }
+  footer .note { font-size: 16px; color: #7C89A0; text-align: right; line-height: 1.65; max-width: 470px; }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="stack">
+
+  <header>
+    <img src="assets/icon.svg" alt="">
+    <div class="titles">
+      <h1>DSH Linux Desktop 打包</h1>
+      <p>为 DeepSeek Harness 构建 Linux 桌面安装包</p>
+    </div>
+  </header>
+
+  <div class="badge">非官方构建 · Unofficial build</div>
+
+  <p class="lede">
+    上游只提供 macOS 与 Windows 桌面版。本仓库<b>自动跟踪上游版本</b>，
+    构建 Linux 安装包并发布，无需手动同步源码。
+  </p>
+
+  <section>
+    <h2>产出 <span>Output</span></h2>
+    <div class="grid">
+      <div class="cell"><div class="k">.deb</div><div class="v">Debian · Ubuntu<br>amd64 · arm64</div></div>
+      <div class="cell"><div class="k">.rpm</div><div class="v">Fedora · RHEL · openSUSE<br>x86_64 · aarch64</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>自动构建 <span>Automated</span></h2>
+    <ul class="plain">
+      <li>每日检查上游最新版本，有新版本即自动构建</li>
+      <li>始终基于<b>上游源码</b>构建，不改动上游代码</li>
+      <li>双架构构建成功后统一发布，已发布的版本不会重复构建</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>安装 <span>Install</span></h2>
+    <pre>sudo apt install ./deepseek-harness-&lt;version&gt;-linux-amd64.deb
+sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm</pre>
+  </section>
+
+  <section>
+    <h2>包内包含 <span>Included</span></h2>
+    <div class="two">
+      <ul class="list yes">
+        <li>自带 Node 与 pnpm，无需另装</li>
+        <li>安装 dsh 命令，已加入 PATH</li>
+      </ul>
+      <ul class="list yes">
+        <li>桌面图标与菜单项</li>
+        <li>Office 文档转换能力</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>不包含 <span>Not included</span></h2>
+    <div class="two">
+      <ul class="list no">
+        <li>应用内自动更新，升级请安装新版本包</li>
+      </ul>
+      <ul class="list no">
+        <li>代码签名，首次安装可能提示来源未知</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <div class="repo">wenyinos/dsh-desktop-linux</div>
+    <div class="note">非官方构建，与 DeepSeek 无隶属或背书关系。<br>DeepSeek Harness 为 DeepSeek 的注册商标。</div>
+  </footer>
+
+</div>
+</body>
+</html>
