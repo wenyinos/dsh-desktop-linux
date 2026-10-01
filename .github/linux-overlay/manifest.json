@@ -17,6 +17,42 @@
       "base": "eef6bc1131564aac2af0667487236edc5c1be721747b4ac81c9442937d34252c",
       "replaces": true
     },
+    "apps/desktop/resources/linux-icons/128x128.png": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/resources/linux-icons/16x16.png": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/resources/linux-icons/24x24.png": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/resources/linux-icons/256x256.png": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/resources/linux-icons/32x32.png": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/resources/linux-icons/48x48.png": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/resources/linux-icons/512x512.png": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/resources/linux-icons/64x64.png": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/resources/linux-icons/96x96.png": {
+      "base": null,
+      "replaces": false
+    },
     "apps/desktop/scripts/desktop-auto-update-environment.d.mts": {
       "base": "2eb7f3ba0c2412e951cfd67051dd84a89b136d311fb59ef4bb0a9b2d865572b8",
       "replaces": true
@@ -57,6 +93,14 @@
       "base": "1402156a2760de1ae1b79727344807ae7be002c62be6dd49ac202efb3c03fd8d",
       "replaces": true
     },
+    "apps/desktop/scripts/linux-installer-scripts.d.mts": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/scripts/linux-installer-scripts.mjs": {
+      "base": null,
+      "replaces": false
+    },
     "apps/desktop/scripts/office-engine-presence-fixup.ts": {
       "base": null,
       "replaces": false
@@ -76,6 +120,10 @@
     "apps/desktop/scripts/prepare-runtime.ts": {
       "base": "5bd7d4c8906cb07d34b7075dad71913353b7424303cd198e56449f6bb278f4c4",
       "replaces": true
+    },
+    "apps/desktop/scripts/render-linux-icons.ts": {
+      "base": null,
+      "replaces": false
     },
     "apps/desktop/scripts/smoke-packaged-runtime.ts": {
       "base": "6b5f35f5d7f3dafd9cee33dbaff8370bd7b513591bf3e49052491712b6da94f0",
@@ -105,5 +153,20 @@
       "base": "a303ffb8994be8e7a874bc887db1abd47a77a6e08872e65f1d65281f43eab91b",
       "replaces": true
     }
+  },
+  "excluded": {
+    ".github/linux-overlay/apply.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
+    ".github/linux-overlay/manifest.json": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
+    ".github/linux-overlay/probe-office-engine.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
+    ".github/linux-overlay/release-notes.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
+    ".github/linux-overlay/verify-manifest.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
+    ".github/workflows/release-desktop-linux.yml": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
+    ".zcodeignore": "Agent tooling state that must not be committed; the repository ignores it.",
+    "README.i18n.yaml": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
+    "README.md": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
+    "README.zh.md": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
+    "apps/desktop/README.i18n.yaml": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
+    "apps/desktop/README.md": "Documentation for this fork; not a build input.",
+    "apps/desktop/README.zh.md": "Documentation for this fork; not a build input."
   }
 }

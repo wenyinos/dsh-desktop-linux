@@ -12,6 +12,7 @@ import { resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths, desktopTarge
 import { preparePrimaryRuntime } from './prepare-primary-runtime.ts'
 import { prepareDesktopCli } from './prepare-cli.ts'
 import { prepareCommandLink } from './prepare-command-link.ts'
+import { prepareLinuxInstallerScripts } from './linux-installer-scripts.ts'
 
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
 const RUNTIME_ROOT = BUILD_PATHS.runtime
@@ -69,6 +70,14 @@ async function main(): Promise<void> {
   if (macosMinimumVersion !== undefined) prepareCommandLink(join(RUNTIME_ROOT, 'cli'), arch, macosMinimumVersion)
   cpSync(join(import.meta.dirname, '..', 'lib', 'command-manager-entry.js'), join(RUNTIME_ROOT, 'cli', 'command-manager.js'))
   cpSync(join(import.meta.dirname, 'command-path.ps1'), join(RUNTIME_ROOT, 'cli', 'command-path.ps1'))
+  // The deb and rpm install scripts put the CLI on PATH; they are written before electron-builder
+  // reads its configuration, which runs after this step.
+  if (platform === 'linux') {
+    await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:linux-installer-scripts', async () => {
+      const scripts = prepareLinuxInstallerScripts(BUILD_PATHS.root)
+      process.stdout.write(`desktop runtime: Linux install scripts written to ${scripts.afterInstall} and ${scripts.afterRemove}\n`)
+    })
+  }
   await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:primary-runtime',
     () => preparePrimaryRuntime({ deferSmoke: values['defer-primary-runtime-smoke'] }))
 }

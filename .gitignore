@@ -47,3 +47,6 @@ worktrees/
 .agents/worktrees/
 .typert-*/
 native/system/test/bin/
+
+# Agent tooling state, never part of the product.
+.zcodeignore

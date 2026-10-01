@@ -24,6 +24,7 @@ import { resolveDesktopBuildCommit } from './desktop-build-commit.mjs'
 import { resolveDesktopBuildVersion } from './desktop-build-version.mjs'
 import { resolveDesktopPolicyEnvironment } from './desktop-policy-environment.mjs'
 import { desktopTargetBuildPaths, resolveDesktopBuildTarget } from './desktop-build-paths.mjs'
+import { linuxInstallerScriptPaths } from './linux-installer-scripts.mjs'
 import { installWindowsDirectoryInstaller } from './windows-directory-installer.mjs'
 import { preserveWindowsRuntimeSignature, signWindowsCode } from './windows-runtime-signature.mjs'
 import { prepareWindowsAsarUnpack, verifyWindowsAsarUnpack } from './windows-asar-unpack.mjs'
@@ -73,6 +74,9 @@ export function createElectronBuilderConfig(
   const macOSSigning = packagesMacOS ? resolveMacOSSigningEnvironment(env) : undefined
   if (packagesMacOS) resolveMacOSNotarizationEnvironment(env)
   const buildPaths = desktopTargetBuildPaths(resolveDesktopBuildTarget(env, hostPlatform, hostArch))
+  // The deb and rpm install scripts are written before this configuration is read; they add the
+  // bundled CLI to PATH, which a Linux package otherwise leaves inside the installed tree.
+  const linuxInstallerScripts = packagesLinux ? linuxInstallerScriptPaths(buildPaths.root) : {}
   // The kit selects a native engine by testing whether its package directory exists, and it reads
   // any directory it cannot load as a broken native install instead of falling back to WASM. A
   // Linux release declares no native engine, so no such directory may reach the archive: one stray
@@ -272,7 +276,18 @@ export function createElectronBuilderConfig(
       // packaged-runtime smoke all resolve the same binary.
       executableName: 'deepseek-harness',
       category: 'Development',
-      icon: fileURLToPath(new URL('../resources/icon.png', import.meta.url)),
+      // A directory of sized bitmaps, not one image: the builder installs each file under
+      // `hicolor/<its own size>/`, and the desktop searches only the sizes the theme declares.
+      // A single large bitmap lands in a directory the theme does not declare, which leaves the
+      // launcher with no icon. `pnpm run render:linux-icons` regenerates this set.
+      icon: fileURLToPath(new URL('../resources/linux-icons', import.meta.url)),
+      // Electron derives its Linux window identity from `desktopName`, and the desktop entry's
+      // `StartupWMClass` has to name the same value or a desktop environment cannot associate a
+      // running window with the entry: the window keeps a generic icon and a second launcher
+      // entry can appear. Without this the class falls back to the product name, which Electron
+      // does not use. `desktopName` is `deepseek-harness`, the same value as the executable and
+      // the desktop entry's file name.
+      syncDesktopName: true,
       maintainer: linuxMaintainer,
       synopsis: 'DeepSeek Harness desktop application',
       description: 'DeepSeek Harness desktop application bundling its own dsh runtime.',
@@ -280,11 +295,14 @@ export function createElectronBuilderConfig(
     },
     deb: {
       packageName: linuxPackageName,
+      // Both formats run the same scripts; these put the bundled CLI on PATH as `dsh`.
+      ...linuxInstallerScripts,
       // Electron's Chromium sandbox and the bundled runtime need these at runtime.
       depends: ['libgtk-3-0', 'libnotify4', 'libnss3', 'libxss1', 'libxtst6', 'xdg-utils', 'libatspi2.0-0', 'libsecret-1-0'],
     },
     rpm: {
       packageName: linuxPackageName,
+      ...linuxInstallerScripts,
       depends: ['gtk3', 'libnotify', 'nss', 'libXScrnSaver', 'libXtst', 'xdg-utils', 'at-spi2-core', 'libsecret'],
     },
     nsis: {

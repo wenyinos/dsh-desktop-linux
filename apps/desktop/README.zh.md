@@ -237,7 +237,13 @@ macOS arm64 命令要求 Apple Silicon。macOS x64 命令可以在 Intel macOS �
 
 Linux 包通过常规系统包渠道分发，而非托管更新 feed。因此它们不携带 `app-update.yml`，不包含强制更新策略，也没有签名或公证步骤，且没有 `upload:*` 命令。对应的 `--dir` 命令停在 `linux-unpacked`；打包后的可执行文件名为 `deepseek-harness`，`runtime/cli/bin/dsh` 通过它启动捆绑的 CLI。产物名为 x64 的 `deepseek-harness-<version>-linux-amd64.deb` 与 `deepseek-harness-<version>-linux-x86_64.rpm`，arm64 对应 `arm64` 与 `aarch64`。Linux 没有原生 LibreOffice 引擎，因此 Office 转换提供者改用 WASM 引擎。
 
-有两项能力仅限 macOS 与 Windows，Linux 包不具备。**从应用菜单安装 `dsh` 命令**需要 macOS 的软链助手或 Windows 的 `PATH` 更新程序，因此该菜单项不存在，安装包也不会把 `dsh` 放入 `PATH`；捆绑的 CLI 仍可通过 `resources/runtime/cli/bin/dsh` 调用，且应用自带 Node 与 pnpm，无需另行安装。**自动更新**需要上文所述的 electron-updater feed。插件管理不受影响，在所有平台都可在应用内正常使用。
+Linux 包还会把 CLI 安装为 `dsh` 命令，因此在终端无需完整路径即可使用捆绑运行时。deb 与 rpm 的安装脚本把 `/usr/bin/dsh` 创建为指向 `resources/runtime/cli/bin/dsh` 的符号链接；该启动器通过自身路径定位应用，因此必须保持为链接而非副本。若 `/usr/bin/dsh` 已存在且非本包创建，安装会保留它并给出提示，以免覆盖用户用 npm 安装的 CLI。这些脚本是在 electron-builder 自带模板之后追加内容，而不是替换它们，因为模板还负责启用沙箱、安装 AppArmor 配置以及刷新 MIME 与桌面数据库。
+
+图标从 `resources/linux-icons` 安装，按 hicolor 主题声明的每个尺寸各放一张位图。单张大图不可行：electron-builder 会用位图自身的边长命名安装目录，而主题未声明的尺寸永远不会被搜索，结果就是启动器没有图标。`pnpm --dir apps/desktop run render:linux-icons` 会依据 `resources/icon.svg` 重新生成该图标集。
+
+桌面项的 `StartupWMClass` 必须与 Electron 实际使用的窗口标识一致，否则桌面环境无法把运行中的窗口关联到该桌面项，窗口会一直显示通用图标。Electron 从打包后 `package.json` 的 `desktopName` 字段推导该标识，因此 `apps/desktop/package.json` 把 `desktopName` 设为 `deepseek-harness`，Linux 配置开启 `syncDesktopName`，让桌面项的 class 与文件名跟随同一个值。它与打包后的可执行文件名一致，因此可执行文件、桌面项与窗口 class 共用同一个标识。
+
+**自动更新**需要上文所述的 electron-updater feed，因此 Linux 包没有。插件管理不受影响，在所有平台都可在应用内正常使用。安装 `dsh` 命令的菜单项存在于 macOS 与 Windows，是因为那两个平台需要它；Linux 在安装时即已提供该命令。
 
 每个目标都在 `apps/desktop/.desktop-build/targets/<target>/` 下持有自己的打包输入、已准备运行时、包集合、dsh 依赖树、pnpm 准备状态、未打包应用、更新元数据和最终产物。Electron 归档缓存继续由 `.desktop-build/downloads` 共享，因为每个归档文件名都包含版本、平台和架构，并且在解包前经过验证。目标构建绝不读取其他目标的可变准备状态。
 
