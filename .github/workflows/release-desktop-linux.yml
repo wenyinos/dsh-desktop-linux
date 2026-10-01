@@ -320,6 +320,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       # The release notes generator lives in this repository, not in the packaged artifacts.
+      # This checkout also puts the repository's own `packages/` directory in the workspace, so
+      # the downloaded assets go somewhere else: any other name avoids a collision, and a
+      # collision would make the upload glob offer the repository's directories as assets.
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
@@ -329,37 +332,46 @@ jobs:
         with:
           pattern: deepseek-harness-linux-*
           merge-multiple: true
-          path: packages
+          path: release-assets
 
       - name: Require both architectures and both formats
         run: |
           set -euo pipefail
-          ls -la packages
+          ls -la release-assets
           for suffix in amd64.deb x86_64.rpm arm64.deb aarch64.rpm; do
-            if [ -z "$(find packages -maxdepth 1 -type f -name "*-${suffix}" | head -1)" ]; then
+            if [ -z "$(find release-assets -maxdepth 1 -type f -name "*-${suffix}" | head -1)" ]; then
               echo "Missing a package ending in ${suffix}; both architectures must build." >&2
               exit 1
             fi
           done
+          # The upload glob must offer files only. A directory here means the download path
+          # overlapped something else in the workspace, and the upload would fail on it.
+          if [ -n "$(find release-assets -mindepth 1 -maxdepth 1 -type d -print -quit)" ]; then
+            echo 'Unexpected directory among the release assets:' >&2
+            find release-assets -mindepth 1 -maxdepth 1 -type d >&2
+            exit 1
+          fi
 
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.resolve.outputs.tag }}
           VERSION: ${{ needs.resolve.outputs.version }}
-          FORCE: ${{ inputs.force }}
           UPSTREAM: ${{ env.UPSTREAM_REPOSITORY }}
         run: |
           set -euo pipefail
           notes="$RUNNER_TEMP/release-notes.md"
           node "$GITHUB_WORKSPACE/.github/linux-overlay/release-notes.mjs" \
             "${TAG}" "${VERSION}" "${UPSTREAM}" "${GITHUB_REPOSITORY}" > "$notes"
-          if [ "${FORCE}" = "true" ]; then
-            gh release delete "${TAG}" --repo "${GITHUB_REPOSITORY}" --cleanup-tag --yes || true
+          title="DeepSeek Harness ${VERSION} (Linux)"
+          # A rebuild replaces the assets in place. Deleting the release first would leave
+          # nothing published if the replacement then failed, which is a worse outcome than a
+          # release that briefly carries the previous build.
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber release-assets/*
+            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "$title" --notes-file "$notes"
+          else
+            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+              --title "$title" --notes-file "$notes" release-assets/*
           fi
-          gh release create "${TAG}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "DeepSeek Harness ${VERSION} (Linux)" \
-            --notes-file "$notes" \
-            packages/*
           echo "Published ${TAG}."
