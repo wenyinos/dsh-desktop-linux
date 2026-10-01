@@ -73,6 +73,20 @@ export function createElectronBuilderConfig(
   const macOSSigning = packagesMacOS ? resolveMacOSSigningEnvironment(env) : undefined
   if (packagesMacOS) resolveMacOSNotarizationEnvironment(env)
   const buildPaths = desktopTargetBuildPaths(resolveDesktopBuildTarget(env, hostPlatform, hostArch))
+  // The kit selects a native engine by testing whether its package directory exists, and it reads
+  // any directory it cannot load as a broken native install instead of falling back to WASM. A
+  // Linux release declares no native engine, so no such directory may reach the archive: one stray
+  // directory there turns a working WASM engine into a startup failure, which the packaged-runtime
+  // smoke reproduces. macOS and Windows select the engine their own package already carries.
+  // Builder glob rules read braces as single-character wildcards, so each name is spelled out.
+  const dshFileFilters = ['**/*', ...packagesLinux ? [
+    '!**/@deepseek-ai/libreoffice-kit-darwin-*/**',
+    '!**/@deepseek-ai/libreoffice-kit-darwin-*',
+    '!**/@deepseek-ai/libreoffice-kit-win32-*/**',
+    '!**/@deepseek-ai/libreoffice-kit-win32-*',
+    '!**/@deepseek-ai/libreoffice-kit-linux-*/**',
+    '!**/@deepseek-ai/libreoffice-kit-linux-*',
+  ] : []]
   let primaryRuntimeDestination
   let dshDestination
   let windowsCode = []
@@ -145,9 +159,20 @@ export function createElectronBuilderConfig(
       'lib/preload-welcome.cjs',
       'renderer/**/*',
       'package.json',
-      { from: buildPaths.dsh, to: 'dsh', filter: ['**/*'] },
+      { from: buildPaths.dsh, to: 'dsh', filter: dshFileFilters },
       // electron-builder excludes a source directory's root node_modules.
-      { from: join(buildPaths.dsh, 'node_modules'), to: 'dsh/node_modules', filter: ['**/*'] },
+      { from: join(buildPaths.dsh, 'node_modules'), to: 'dsh/node_modules', filter: dshFileFilters },
+      // The same exclusion from the app directory, so a native engine name cannot reach the
+      // archive through any other collection route either. Contents are excluded as well: a
+      // copied child would recreate the directory the kit tests for.
+      ...packagesLinux ? [
+        '!**/@deepseek-ai/libreoffice-kit-darwin-*/**',
+        '!**/@deepseek-ai/libreoffice-kit-darwin-*',
+        '!**/@deepseek-ai/libreoffice-kit-win32-*/**',
+        '!**/@deepseek-ai/libreoffice-kit-win32-*',
+        '!**/@deepseek-ai/libreoffice-kit-linux-*/**',
+        '!**/@deepseek-ai/libreoffice-kit-linux-*',
+      ] : [],
     ],
     asarUnpack: unpack,
     extraResources: [

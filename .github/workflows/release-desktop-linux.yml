@@ -233,27 +233,24 @@ jobs:
             find "$root" -name events.jsonl -print -exec tail -n 40 {} \; || true
           fi
 
-      # The Office engine resolves through the packaged module tree. The kit treats a directory
-      # that exists without a usable manifest as an incomplete install rather than falling back
-      # to WASM, so this prints both the assembled tree and the archive's own path index.
+      # The kit selects a native engine by testing whether its package directory exists, and it
+      # treats a directory it cannot load as a broken native install rather than falling back to
+      # WASM. This replays that test from inside the packaged runtime and lists the engine names
+      # the archive itself carries, so a stray entry is named instead of inferred.
       - name: Inspect the packaged Office engines
         if: always()
         run: |
           set -euo pipefail
           base="$SOURCE_ROOT/apps/desktop/.desktop-build/targets/${{ matrix.target }}"
           echo "== filesystem entries naming an Office engine"
-          find "$base" -name '*libreoffice-kit*' -maxdepth 12 -printf '%y %p\n' 2>/dev/null | sort -u | head -40 || true
-          echo "== archive header entries naming an Office engine"
-          archive="$base/artifacts/linux-unpacked/resources/app.asar"
-          if [ -f "$archive" ]; then
-            # An ASAR begins with a JSON index of every packed path, so the header alone shows
-            # whether a name reached the archive even when it is absent from the filesystem.
-            head -c 4194304 "$archive" | grep -ao 'libreoffice-kit-[a-z0-9._-]*' | sort -u | head -20
-          else
-            echo "   (no app.asar)"
-          fi
-          echo "== dsh tree before packing, as recorded by the run"
-          find "$base/dsh/node_modules/@deepseek-ai" -maxdepth 1 -name 'libreoffice*' -printf '%y %f\n' 2>/dev/null | sort || true
+          find "$base" -name '*libreoffice-kit*' -printf '%y %p\n' 2>/dev/null | sort -u | head -30 || true
+          echo "== the packaged runtime's own view"
+          ELECTRON_RUN_AS_NODE=1 "$base/artifacts/linux-unpacked/deepseek-harness" \
+            "$GITHUB_WORKSPACE/.github/linux-overlay/probe-office-engine.mjs" \
+            "$base/artifacts/linux-unpacked/resources/app.asar/dsh/node_modules/@deepseek-ai/libreoffice-kit/lib/index.js" \
+            "@deepseek-ai/libreoffice-kit-linux-${{ matrix.arch }}-glibc" \
+            "$base/artifacts/linux-unpacked/resources/app.asar" \
+            || echo "   (probe unavailable)"
 
       - name: Collect packages
         if: always()
