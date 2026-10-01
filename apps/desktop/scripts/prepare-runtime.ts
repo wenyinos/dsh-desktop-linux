@@ -12,7 +12,7 @@ import { resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths, desktopTarge
 import { preparePrimaryRuntime } from './prepare-primary-runtime.ts'
 import { prepareDesktopCli } from './prepare-cli.ts'
 import { prepareCommandLink } from './prepare-command-link.ts'
-import { prepareLinuxInstallerScripts } from './linux-installer-scripts.ts'
+import { prepareLinuxInstallerScripts } from './linux-installer-scripts.mjs'
 
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
 const RUNTIME_ROOT = BUILD_PATHS.runtime
