@@ -92,7 +92,9 @@ jobs:
   # runtime is executed by the payload and Host smoke checks during packaging, which cannot run
   # under emulation.
   package:
-    name: Package Linux ${{ matrix.arch }}
+    # The architecture appears in each matrix job's own name; this label stays fixed so a run
+    # that skips packaging reads as skipped rather than showing an unexpanded expression.
+    name: Package Linux deb and rpm
     needs: resolve
     if: needs.resolve.outputs.build == 'true'
     strategy:
