@@ -251,6 +251,11 @@ overlay 是范围有限、可评审的改动，而非整树合并，但它确实
 python3 -c "import json;print('\n'.join(json.load(open('.github/linux-overlay/manifest.json'))['files']))"
 ```
 
+打包代码依赖两条 Linux 特有的约束：
+
+- **Office 引擎存在性探测会在准备阶段被修复。** kit 通过判断引擎包目录是否存在来选择原生引擎或 WASM，并把除 `undefined` 之外的任何返回值都视为存在。Electron 的归档文件系统对 `app.asar` 内不存在的路径返回 `null`，因此在打包后的应用中，kit 会认为每个原生引擎都已安装，抛出安装不完整错误，而不会回退到 Linux 声明的 WASM 引擎。准备阶段会在封装完整性描述符之前重写该表达式，使 `null` 计为不存在。macOS 与 Windows 因声明的原生引擎确实存在，不会走到该分支。
+- **解包后的应用目录带架构后缀。** electron-builder 会为除平台默认架构之外的每个架构追加架构名，因此 Linux x64 落在 `linux-unpacked`，Linux arm64 落在 `linux-arm64-unpacked`。任何定位已组装应用的位置都要依据目标自身的架构推导该名称，而不是假定某一个。
+
 ### 运行时文件筛选
 
 Desktop 在本地打包工作区包，并通过目标捆绑的 Node 和 pnpm 安装外部依赖。[Desktop 文件策略](scripts/runtime-file-policy.ts)随后在签名和完整性封装前过滤不可变的 `resources/app.asar/dsh/node_modules` 副本。它排除 TypeScript 声明、已识别的 JavaScript/CSS/TypeScript source map、TypeScript 构建缓存、Domino 测试目录、选定的原生编译器输出和其他平台的 node-pty 预构建文件。它保留运行时 JavaScript、原生模块及其 DLL/EXE 辅助文件、WASM、未知资源、许可证和 notices。依赖清单在完整性封装前经过 electron-builder 的元数据清理，确保归档保持已记录的字节。该策略不修改 npm tarball、捆绑的包管理器或用户安装的插件文件。

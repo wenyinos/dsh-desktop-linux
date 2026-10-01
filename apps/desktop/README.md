@@ -249,6 +249,11 @@ The overlay supersedes upstream edits to the files it lists, so the build warns 
 python3 -c "import json;print('\n'.join(json.load(open('.github/linux-overlay/manifest.json'))['files']))"
 ```
 
+Two Linux-specific constraints the packaging code depends on:
+
+- **The Office engine presence probe is repaired during preparation.** The kit decides between a native engine and WASM by testing whether the engine's package directory exists, and it reads any answer other than `undefined` as present. Electron's archive filesystem answers a missing path inside `app.asar` with `null`, so in a packaged application the kit reports every native engine as installed and throws an incomplete-installation error instead of falling back to WASM, which is the engine Linux declares. Preparation rewrites that one expression to count `null` as absent, before the integrity descriptor is sealed. macOS and Windows never reach the branch because their declared native engines exist.
+- **Unpacked application directories carry an architecture suffix.** electron-builder appends the architecture for every architecture other than the platform default, so Linux x64 lands in `linux-unpacked` and Linux arm64 in `linux-arm64-unpacked`. Anything locating the assembled application derives that name from the target's own architecture rather than assuming one.
+
 ### Runtime file selection
 
 Desktop packs workspace packages locally and installs external dependencies through the target's bundled Node and pnpm. [Desktop's file policy](scripts/runtime-file-policy.ts) then filters the immutable `resources/app.asar/dsh/node_modules` copy before signing and integrity sealing. It omits TypeScript declarations, recognized JavaScript/CSS/TypeScript source maps, TypeScript build caches, Domino's test directory, selected native compiler outputs, and node-pty prebuilds for other platforms. It preserves runtime JavaScript, native modules and their DLL/EXE helpers, WASM, unknown assets, licenses, and notices. Dependency manifests pass through electron-builder's metadata cleanup before integrity sealing, so archiving preserves their recorded bytes. The policy does not alter npm tarballs, the bundled package manager, or user-installed plugin files.
