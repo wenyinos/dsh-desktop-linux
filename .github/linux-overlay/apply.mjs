@@ -10,7 +10,7 @@
  */
 
 import { createHash } from 'node:crypto'
-import { copyFileSync, mkdirSync, readFileSync, statSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
@@ -28,12 +28,43 @@ function sha256(path) {
 }
 
 /**
+ * Add the keys this repository contributes to the upstream document, keeping every upstream
+ * value.
+ *
+ * A manifest file whose change is purely additive has to merge rather than replace: the root and
+ * desktop manifests carry the release version, and upstream bumps it in every release, so a
+ * whole-file replacement would restore the older version and `release:pack` would then refuse a
+ * release whose members disagree about it.
+ *
+ * This adds only keys upstream does not have. It cannot change or remove one, which is what
+ * keeps the version and every other upstream value intact. A file needing a changed value
+ * belongs back in whole-file replacement, where the drift warning names it.
+ * @param {object} upstream - Parsed upstream document.
+ * @param {object} local - Parsed document from this repository.
+ * @returns {object} The upstream document with this repository's additions.
+ */
+export function mergeJson(upstream, local) {
+  if (!isPlainObject(upstream) || !isPlainObject(local)) return upstream
+  const merged = { ...upstream }
+  for (const [key, value] of Object.entries(local)) {
+    if (!(key in upstream)) merged[key] = value
+    else if (isPlainObject(value) && isPlainObject(upstream[key])) merged[key] = mergeJson(upstream[key], value)
+  }
+  return merged
+}
+
+function isPlainObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/**
  * Warn when upstream changed a file this support replaces, then copy every listed file.
  *
  * A changed file is a warning rather than a failure: building a newer upstream tag is the
  * normal case here, and the replacement is a complete file, so upstream edits to it are
  * superseded by design. The warning names them anyway, because an upstream fix to one of
- * these files has to be reconciled by hand.
+ * these files has to be reconciled by hand. A file marked `merge` is the exception: its
+ * upstream content is kept and only the keys this repository sets are applied.
  * @param {string} source - This repository's tree, holding the Linux support files.
  * @param {string} target - Extracted upstream source tree to overlay onto.
  * @returns {{ copied: string[], drifted: string[] }} Paths copied and paths upstream had changed.
@@ -59,7 +90,14 @@ export function applyOverlay(source, target) {
     if (entry.base !== null && existing === null) drifted.push(path)
     const destination = join(target, path)
     mkdirSync(dirname(destination), { recursive: true })
-    copyFileSync(join(source, path), destination)
+    if (entry.merge === true && existing !== null) {
+      const upstream = JSON.parse(readFileSync(destination, 'utf8'))
+      const local = JSON.parse(readFileSync(join(source, path), 'utf8'))
+      writeFileSync(destination, `${JSON.stringify(mergeJson(upstream, local), undefined, 2)}\n`)
+    }
+    else {
+      copyFileSync(join(source, path), destination)
+    }
     copied.push(path)
   }
   return { copied, drifted }

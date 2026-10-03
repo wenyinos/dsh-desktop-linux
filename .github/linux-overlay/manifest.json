@@ -15,7 +15,8 @@
     },
     "apps/desktop/package.json": {
       "base": "eef6bc1131564aac2af0667487236edc5c1be721747b4ac81c9442937d34252c",
-      "replaces": true
+      "replaces": true,
+      "merge": true
     },
     "apps/desktop/resources/linux-icons/128x128.png": {
       "base": null,
@@ -151,7 +152,8 @@
     },
     "package.json": {
       "base": "a303ffb8994be8e7a874bc887db1abd47a77a6e08872e65f1d65281f43eab91b",
-      "replaces": true
+      "replaces": true,
+      "merge": true
     }
   },
   "excluded": {
