@@ -63,7 +63,9 @@ trap finish EXIT
 
 step "Installing the build environment"
 pkg update -f
-pkg install -y node24 npm-node24 git python3 gmake app-builder
+# ripgrep comes from the port: the javascript selection package publishes no FreeBSD build, and
+# the packaging step copies this binary beside the application as the search tool's sidecar.
+pkg install -y node24 npm-node24 git python3 gmake app-builder ripgrep
 
 step "Installing the FreeBSD Electron distribution"
 electron_package="/var/tmp/$(basename "$DSH_ELECTRON_URL")"

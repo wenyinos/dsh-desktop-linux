@@ -1,6 +1,6 @@
 import { officePackageDirectories } from '../../../scripts/libreoffice-packages.mjs'
 import { X509Certificate } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, renameSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -231,6 +231,12 @@ export function createElectronBuilderConfig(
       if (resolvedPlatform === 'darwin' && update !== undefined) {
         await writeMacOSAppUpdateConfig(resourcesDir, resolveMacOSAppUpdateFeed(context.packager.config.publish),
           context.packager.appInfo.updaterCacheDirName)
+      }
+      // electron-builder renames only the main binary, and the search tool resolves its ripgrep
+      // sidecar beside that executable, so the FreeBSD sidecar follows the renamed binary.
+      if (resolvedPlatform === 'freebsd') {
+        const sidecar = join(context.appOutDir, 'electron-rg')
+        if (existsSync(sidecar)) renameSync(sidecar, `${join(context.appOutDir, context.packager.executableName ?? 'deepseek-harness')}-rg`)
       }
       // The bundled runtime declares whichever version prepared it: the product version for an ordinary
       // release, and a rewritten one for installed-update qualification.

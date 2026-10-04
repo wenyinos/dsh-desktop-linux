@@ -174,7 +174,9 @@ export function resolveRgPath(): Promise<string> {
     const executableSidecar = process.platform === 'win32'
       ? join(executable.dir, `${executable.name}-rg.exe`)
       : `${process.execPath}-rg`
-    if ('pkg' in process && existsSync(executableSidecar)) return executableSidecar
+    // The selection package publishes no FreeBSD build, so a FreeBSD desktop release ships the
+    // port's ripgrep beside its executable and resolves that sidecar first.
+    if (('pkg' in process || process.platform === 'freebsd') && existsSync(executableSidecar)) return executableSidecar
     const dependency = (await import('@vscode/ripgrep')).rgPath
     return process.versions.electron === undefined
       ? dependency

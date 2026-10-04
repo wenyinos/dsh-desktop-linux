@@ -155,7 +155,11 @@ function checkHtml() {
 }
 
 try {
-  const builtin = requireRuntime('node-addon-require-builtin')
+  // The addon publishes no FreeBSD binding; the runtime reaches the same internal modules
+  // through the exposed internal require on that platform.
+  const builtin = process.platform === 'freebsd'
+    ? { requireBuiltin: moduleId => requireRuntime(moduleId) }
+    : requireRuntime('node-addon-require-builtin')
   assert.equal(typeof builtin.requireBuiltin('internal/modules/esm/loader').getOrInitializeCascadedLoader, 'function')
   checkPnpm()
   checkKoffi()

@@ -182,6 +182,10 @@
       "base": "26c03a1dbf821d7d429c63435049c9b6d3c3a5b1c0c8ff1ce0aec14113fd08b7",
       "replaces": true
     },
+    "apps/desktop/tests/fixtures/runtime-payload-smoke.mjs": {
+      "base": "5a48c0a9662dfaecc606b7fa8dfe5ebb38ae676cc105c25094a61469961d2948",
+      "replaces": true
+    },
     "apps/desktop/tests/office-engine-presence-fixup.spec.ts": {
       "base": null,
       "replaces": false
@@ -234,6 +238,14 @@
       "base": "a303ffb8994be8e7a874bc887db1abd47a77a6e08872e65f1d65281f43eab91b",
       "replaces": true,
       "merge": true
+    },
+    "packages/boot/app-boot/src/profile-resolution/resolver.ts": {
+      "base": "cf3c2b79646cbacf2475db7841e7bf77c312c1e934f3b42ee87d18db58d806a1",
+      "replaces": true
+    },
+    "packages/fs/tool-fs-search/src/search-core.ts": {
+      "base": "7b12cf379bfbbf24792b259673d2c6fa74ab7ec9322b3590e4482f4ebc024cab",
+      "replaces": true
     },
     "patches/node-pty@1.2.0-beta.15.patch": {
       "base": "b40ae545608897914bd25fb009c97eeac478c34e8a910298ddcb01b746534bb0",

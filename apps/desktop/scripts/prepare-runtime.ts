@@ -2,7 +2,7 @@
 
 import { packagingStep } from './packaging-step.mjs'
 import { execFileSync } from 'node:child_process'
-import { chmodSync, cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -56,6 +56,13 @@ function prepareFreebsdElectron(): void {
     filter: source => !FREEBSD_ELECTRON_EXCLUSIONS.has(source.slice(normalizedRoot.length).replace(/^\/+/u, '').split('/')[0] ?? ''),
   })
   writeFileSync(join(BUILD_PATHS.electron, 'version'), `${version}\n`)
+  // The ripgrep selection package publishes no FreeBSD build, so the release carries the port's
+  // binary beside the executable, which is where the search tool resolves its sidecar from.
+  const ripgrep = '/usr/local/bin/rg'
+  if (!existsSync(ripgrep)) {
+    throw new Error(`desktop runtime: ripgrep is missing at ${ripgrep}; install textproc/ripgrep on the build host`)
+  }
+  cpSync(ripgrep, join(BUILD_PATHS.electron, 'electron-rg'))
 }
 
 /**

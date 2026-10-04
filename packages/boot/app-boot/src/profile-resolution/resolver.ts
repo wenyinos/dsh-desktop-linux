@@ -612,7 +612,12 @@ class ResolutionRouter {
 
 function internalModules(): InternalModules {
   const require = createRequire(import.meta.url)
-  const addon = require('node-addon-require-builtin') as { requireBuiltin(moduleId: string): unknown }
+  // node-addon-require-builtin ships bindings for Linux, macOS, and Windows only and fails
+  // closed on other hosts; FreeBSD reaches the same internal modules through the exposed
+  // internal require, which the packaged launch and this build chain already enable.
+  const addon = process.platform === 'freebsd'
+    ? { requireBuiltin: (moduleId: string): unknown => require(moduleId) }
+    : require('node-addon-require-builtin') as { requireBuiltin(moduleId: string): unknown }
   const esmModule = addon.requireBuiltin('internal/modules/esm/loader') as {
     getOrInitializeCascadedLoader(): ModuleLoaderV1 | ModuleLoaderV2
   }
