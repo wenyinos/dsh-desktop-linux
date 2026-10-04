@@ -200,7 +200,12 @@ export class DesktopHostProcess {
   async start(): Promise<DesktopHostReady> {
     if (this.child !== undefined) return this.readyPromise
     const entry = join(this.runtimeDir, 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'index.js')
-    const child = spawn(this.launchNode(), [
+    const launchNode = this.launchNode()
+    const environment = desktopNodeEnvironment(this.node, undefined, this.environment)
+    // The Node stub execs the executable this variable names, so the launch environment carries
+    // it for the stub and every descendant that spawns through the stub.
+    if (launchNode !== this.node) environment.DSH_DESKTOP_NODE_EXECUTABLE = this.node
+    const child = spawn(launchNode, [
       '--expose-internals',
       ...(this.inspectPort === undefined ? [] : [`--inspect=127.0.0.1:${String(this.inspectPort)}`]),
       entry,
@@ -210,7 +215,7 @@ export class DesktopHostProcess {
       ...this.packageManager === undefined ? [] : [this.packageManager.pnpm, this.packageManager.nodeBin],
     ], {
       cwd: this.projectDir,
-      env: desktopNodeEnvironment(this.node, undefined, this.environment),
+      env: environment,
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
     })
     this.child = child
