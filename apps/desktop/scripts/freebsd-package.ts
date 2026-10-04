@@ -161,7 +161,9 @@ function stageFiles(stage: string, application: string, packageName: string): vo
   const cli = join(shareRoot, 'resources', 'runtime', 'cli', 'bin', 'dsh')
   if (!existsSync(cli)) throw new Error(`freebsd package: ${cli} is missing from the assembled application`)
   symlinkSync(`../share/${packageName}/resources/runtime/cli/bin/dsh`, join(binDir, 'dsh'))
-  writeFileSync(join(stage, PREFIX.slice(1), 'share', 'applications', `${packageName}.desktop`), desktopEntry(packageName))
+  const applications = join(stage, PREFIX.slice(1), 'share', 'applications')
+  mkdirSync(applications, { recursive: true })
+  writeFileSync(join(applications, `${packageName}.desktop`), desktopEntry(packageName))
   for (const icon of readdirSync(LINUX_ICONS).sort()) {
     const match = ICON_PATTERN.exec(icon)
     if (match === null) continue
