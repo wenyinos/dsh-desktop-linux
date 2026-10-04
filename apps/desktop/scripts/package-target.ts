@@ -47,19 +47,19 @@ const DESKTOP_UPLOAD_CREDENTIAL_ENV_NAMES = new Set([
 const AUTOMATIC_BUILD_VERSION = 'auto'
 
 /** Fixed platform and architecture identifiers exposed by package scripts. */
-export type DesktopPackageTargetName = 'mac-arm64' | 'mac-x64' | 'win-x64' | 'linux-x64' | 'linux-arm64'
+export type DesktopPackageTargetName = 'mac-arm64' | 'mac-x64' | 'win-x64' | 'linux-x64' | 'linux-arm64' | 'freebsd-x64'
 
 /** One supported release target and its electron-builder selectors. */
 export interface DesktopPackageTarget {
   readonly name: DesktopPackageTargetName
-  readonly platform: 'darwin' | 'win32' | 'linux'
+  readonly platform: 'darwin' | 'win32' | 'linux' | 'freebsd'
   readonly arch: 'arm64' | 'x64'
   readonly builderPlatform: '--mac' | '--win' | '--linux'
   readonly builderArch: '--arm64' | '--x64'
   /**
    * Whether the target ships the electron-updater feed and the mandatory-update policy.
    * macOS and Windows publish through the managed release CDN; Linux packages are
-   * distributed as deb/rpm outside that feed, so they carry neither.
+   * distributed as deb/rpm and FreeBSD packages as pkg outside that feed, so they carry neither.
    */
   readonly managedUpdates: boolean
 }
@@ -103,6 +103,16 @@ const TARGETS: Record<DesktopPackageTargetName, DesktopPackageTarget> = {
     arch: 'arm64',
     builderPlatform: '--linux',
     builderArch: '--arm64',
+    managedUpdates: false,
+  },
+  'freebsd-x64': {
+    name: 'freebsd-x64',
+    platform: 'freebsd',
+    arch: 'x64',
+    // The FreeBSD Electron distribution has the Linux layout, so electron-builder assembles the
+    // application through its Linux path and the FreeBSD package is formed from that directory.
+    builderPlatform: '--linux',
+    builderArch: '--x64',
     managedUpdates: false,
   },
 }
@@ -212,6 +222,11 @@ export function resolveDesktopPackageTarget(
   if (target.platform === 'linux' && (hostPlatform !== 'linux' || hostArch !== target.arch)) {
     throw new Error(`desktop package: ${name} requires a Linux ${target.arch} build host`)
   }
+  // The FreeBSD package runs the FreeBSD Electron distribution and the FreeBSD pkg tooling, so
+  // it is assembled on a FreeBSD host of the matching architecture.
+  if (target.platform === 'freebsd' && (hostPlatform !== 'freebsd' || hostArch !== target.arch)) {
+    throw new Error(`desktop package: ${name} requires a FreeBSD ${target.arch} build host`)
+  }
   if (name === 'mac-arm64' && hostArch !== 'arm64') {
     throw new Error('desktop package: mac-arm64 requires an Apple Silicon build host')
   }
@@ -291,6 +306,9 @@ export function desktopElectronBuilderArguments(
   directory: boolean,
   artifact?: DesktopPrepackagedArtifact,
 ): readonly string[] {
+  // A FreeBSD target never produces an electron-builder artifact: the assembled directory is the
+  // input to the FreeBSD pkg assembly, which is the only packaged form this target ships.
+  const unpacked = directory || target.platform === 'freebsd'
   return [
     'exec',
     'electron-builder',
@@ -301,7 +319,7 @@ export function desktopElectronBuilderArguments(
     target.builderArch,
     '--publish',
     'never',
-    ...(directory ? ['--dir'] : []),
+    ...(unpacked ? ['--dir'] : []),
     ...(artifact === undefined ? [] : [
       ...(target.platform === 'darwin' ? ['--config.mac.notarize=false'] : []),
       '--prepackaged', artifact.appPath,
@@ -399,6 +417,8 @@ async function main(): Promise<void> {
         signingEnvironment => packageTarget(invocation, signingEnvironment, run)), secrets)
     } else if (target.platform === 'win32') {
       await packagingStep(run.directory, 'windows-package', () => packageTarget(invocation, environment, run), secrets)
+    } else if (target.platform === 'freebsd') {
+      await packagingStep(run.directory, 'freebsd-package', () => packageTarget(invocation, environment, run), secrets)
     } else {
       await packagingStep(run.directory, 'linux-package', () => packageTarget(invocation, environment, run), secrets)
     }
@@ -498,6 +518,18 @@ export async function packageTarget(
     '--pack-destination',
     buildPaths.packedLandlock,
   ], buildEnv, REPOSITORY_ROOT)
+  if (target.platform === 'freebsd') {
+    // The FreeBSD flock addon and the platform package carrying it are built here and packed into
+    // the local package set: no registry publishes a FreeBSD build of the system addons.
+    await execute(['--dir', 'native/system', 'run', 'build:native'], buildEnv, REPOSITORY_ROOT)
+    await execute([
+      '--dir',
+      'native/system/packages/freebsd-x64',
+      'pack',
+      '--pack-destination',
+      buildPaths.packedLandlock,
+    ], buildEnv, REPOSITORY_ROOT)
+  }
   await execute(['run', 'prepare:runtime', ...(signPrimaryRuntime ? ['--defer-primary-runtime-smoke'] : [])], downloadEnv)
   if (signPrimaryRuntime) await execute(['run', 'sign:primary-runtime'], electronBuilderEnv)
   await execute(['run', 'prepare:packages'], targetEnv)
@@ -526,6 +558,11 @@ export async function packageTarget(
   } else {
     await signedStage('artifacts', () => execute(desktopElectronBuilderArguments(target, invocation.directory), electronBuilderEnv))
     await execute(['exec', 'tsx', 'scripts/smoke-packaged-runtime.ts', ...(invocation.unsigned ? ['--unsigned'] : [])], targetEnv)
+    // The FreeBSD pkg is assembled from the verified unpacked directory, so the smoke above is
+    // what qualifies the exact tree the package ships. A --dir run stops at that directory.
+    if (target.platform === 'freebsd' && !invocation.directory) {
+      await execute(['exec', 'tsx', 'scripts/freebsd-package.ts'], targetEnv)
+    }
   }
   if (!invocation.directory && !invocation.unsigned) writeReleaseRecord(target, electronBuilderEnv, buildPaths.artifacts)
   if (journal) recordPackagingEvent(journal, { type: 'artifacts', directory: buildPaths.artifacts })

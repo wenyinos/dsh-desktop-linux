@@ -77,6 +77,18 @@ const LINUX_PACKAGE_TOOLS: readonly { readonly tool: string; readonly args: read
   { tool: 'dpkg-deb', args: ['--version'], reason: 'dpkg-deb is required to build the deb package' },
 ]
 
+/**
+ * One external command a FreeBSD packaging run needs. The run compiles the flock addon and
+ * rebuilds node-pty from source, so the node-gyp toolchain has to exist before the first build
+ * step instead of failing minutes into the runtime installation.
+ */
+const FREEBSD_PACKAGE_TOOLS: readonly { readonly tool: string; readonly args: readonly string[]; readonly reason: string }[] = [
+  { tool: 'pkg', args: ['--version'], reason: 'pkg is required to assemble the FreeBSD package' },
+  { tool: 'cc', args: ['--version'], reason: 'a C compiler is required to build the native addons' },
+  { tool: 'gmake', args: ['--version'], reason: 'gmake is required because node-gyp drives GNU make on FreeBSD' },
+  { tool: 'python3', args: ['--version'], reason: 'python3 is required by node-gyp' },
+]
+
 async function probeCommand(tool: string, args: readonly string[]): Promise<string | undefined> {
   try {
     await run(tool, [...args], { timeout: 20_000, windowsHide: true })
@@ -96,6 +108,15 @@ async function probeLinuxPackageToolchain(): Promise<DesktopToolchainProbeFailur
   return failures
 }
 
+async function probeFreeBSDPackageToolchain(): Promise<DesktopToolchainProbeFailure[]> {
+  const failures: DesktopToolchainProbeFailure[] = []
+  for (const { tool, args, reason } of FREEBSD_PACKAGE_TOOLS) {
+    const detail = await probeCommand(tool, args)
+    if (detail !== undefined) failures.push({ tool, detail: `${reason} (${detail})` })
+  }
+  return failures
+}
+
 /**
  * Probe every external tool one packaging run needs.
  * @param platform - Target platform; a Windows target already requires a Windows build host.
@@ -103,7 +124,7 @@ async function probeLinuxPackageToolchain(): Promise<DesktopToolchainProbeFailur
  * @returns Every probe that failed, empty when the host can run the packaging sequence.
  */
 export async function probeDesktopToolchain(
-  platform: 'darwin' | 'win32' | 'linux',
+  platform: 'darwin' | 'win32' | 'linux' | 'freebsd',
   environment: NodeJS.ProcessEnv = process.env,
 ): Promise<readonly DesktopToolchainProbeFailure[]> {
   const failures: DesktopToolchainProbeFailure[] = []
@@ -111,6 +132,7 @@ export async function probeDesktopToolchain(
   if (tar !== undefined) failures.push({ tool: 'tar', detail: tar })
   if (platform === 'win32') failures.push(...await probeWindowsInstallerToolchain(environment))
   if (platform === 'linux') failures.push(...await probeLinuxPackageToolchain())
+  if (platform === 'freebsd') failures.push(...await probeFreeBSDPackageToolchain())
   return failures
 }
 
@@ -121,7 +143,7 @@ export async function probeDesktopToolchain(
  * @returns Resolves when every probe passes.
  */
 export async function requireDesktopToolchain(
-  platform: 'darwin' | 'win32' | 'linux',
+  platform: 'darwin' | 'win32' | 'linux' | 'freebsd',
   environment: NodeJS.ProcessEnv = process.env,
 ): Promise<void> {
   const failures = await probeDesktopToolchain(platform, environment)

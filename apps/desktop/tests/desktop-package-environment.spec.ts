@@ -118,6 +118,30 @@ describe('Desktop local packaging configuration', () => {
     })
   })
 
+  it('owns the FreeBSD Electron settings and refuses fields of other platforms', async () => {
+    await withDirectory(async (directory) => {
+      expect(() => loadDesktopPackageEnvironment('freebsd', RELEASE, directory)).toThrow(/copy .*\.env\.freebsd\.example/u)
+      const settings = [
+        "DSH_DESKTOP_APP_ID='com.example.desktop'",
+        'DSH_DESKTOP_FREEBSD_ELECTRON_ROOT=/usr/local/share/electron44',
+        'DSH_DESKTOP_FREEBSD_ELECTRON_VERSION=44.3.0',
+      ].join('\n') + '\n'
+      await writeFile(join(directory, '.env.freebsd'), settings)
+      const loaded = loadDesktopPackageEnvironment('freebsd', RELEASE, directory)
+      expect(loaded.DSH_DESKTOP_FREEBSD_ELECTRON_ROOT).toBe('/usr/local/share/electron44')
+      expect(loaded.DSH_DESKTOP_FREEBSD_ELECTRON_VERSION).toBe('44.3.0')
+      // The shared settings still apply, but the FreeBSD file owns no Linux template field.
+      await writeFile(join(directory, '.env.freebsd'), `${settings}DSH_DESKTOP_LINUX_MAINTAINER=Someone\n`)
+      expect(() => loadDesktopPackageEnvironment('freebsd', {}, directory))
+        .toThrow(/unsupported setting DSH_DESKTOP_LINUX_MAINTAINER/u)
+      // Like the Linux target, the package ships outside the managed feed: validation needs
+      // neither a policy origin, a signing identity, nor an update destination.
+      expect(() => {
+        validateDesktopPackageEnvironment(loaded, { platform: 'freebsd', arch: 'x64' })
+      }).not.toThrow()
+    })
+  })
+
   it('checks application and update configuration before Windows credentials while preserving unsigned and preparation modes', () => {
     expect(() => {
       validateDesktopPackageEnvironment({}, WINDOWS, { unsigned: true })

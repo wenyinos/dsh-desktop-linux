@@ -39,6 +39,8 @@
     "package:linux:x64:dir": "tsx scripts/package-target.ts linux-x64 --dir",
     "package:linux:arm64": "tsx scripts/package-target.ts linux-arm64",
     "package:linux:arm64:dir": "tsx scripts/package-target.ts linux-arm64 --dir",
+    "package:freebsd:x64": "tsx scripts/package-target.ts freebsd-x64",
+    "package:freebsd:x64:dir": "tsx scripts/package-target.ts freebsd-x64 --dir",
     "upload:mac:arm64": "tsx scripts/upload-target.ts mac-arm64",
     "upload:mac:x64": "tsx scripts/upload-target.ts mac-x64",
     "upload:win:x64": "tsx scripts/upload-target.ts win-x64",

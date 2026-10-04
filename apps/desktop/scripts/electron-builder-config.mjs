@@ -62,11 +62,14 @@ export function createElectronBuilderConfig(
   if (unsigned && resolvedPlatform !== 'win32') throw new Error('desktop package: unsigned builds require Windows')
   const packagesMacOS = targetPlatform === 'darwin' || (targetPlatform === undefined && hostPlatform === 'darwin')
   const packagesWindows = resolvedPlatform === 'win32'
-  const packagesLinux = resolvedPlatform === 'linux'
+  // The FreeBSD target assembles through the Linux path: the FreeBSD Electron distribution has
+  // the Linux layout, and the same filters, desktop entry, and icons apply. Only the final
+  // package assembly differs, and that runs after electron-builder.
+  const packagesLinux = resolvedPlatform === 'linux' || resolvedPlatform === 'freebsd'
   // fpm requires a maintainer and a project URL for deb/rpm metadata; the release settings may
   // override the maintainer, and the package ident defaults to the product's command name.
-  const linuxMaintainer = env.DSH_DESKTOP_LINUX_MAINTAINER?.trim() || 'DeepSeek <support@deepseek.com>'
-  const linuxPackageName = env.DSH_DESKTOP_LINUX_PACKAGE_NAME?.trim() || 'deepseek-harness'
+  const linuxMaintainer = (resolvedPlatform === 'freebsd' ? env.DSH_DESKTOP_FREEBSD_MAINTAINER : env.DSH_DESKTOP_LINUX_MAINTAINER)?.trim() || 'DeepSeek <support@deepseek.com>'
+  const linuxPackageName = (resolvedPlatform === 'freebsd' ? env.DSH_DESKTOP_FREEBSD_PACKAGE_NAME : env.DSH_DESKTOP_LINUX_PACKAGE_NAME)?.trim() || 'deepseek-harness'
   // Linux packages ship as deb/rpm through ordinary distribution rather than the managed
   // update feed, so they carry neither a policy service origin nor an app-update.yml.
   const policy = packagesLinux ? undefined : resolveDesktopPolicyEnvironment(env)
@@ -75,8 +78,9 @@ export function createElectronBuilderConfig(
   if (packagesMacOS) resolveMacOSNotarizationEnvironment(env)
   const buildPaths = desktopTargetBuildPaths(resolveDesktopBuildTarget(env, hostPlatform, hostArch))
   // The deb and rpm install scripts are written before this configuration is read; they add the
-  // bundled CLI to PATH, which a Linux package otherwise leaves inside the installed tree.
-  const linuxInstallerScripts = packagesLinux ? linuxInstallerScriptPaths(buildPaths.root) : {}
+  // bundled CLI to PATH, which a Linux package otherwise leaves inside the installed tree. The
+  // FreeBSD package installs the command itself, so this stays a Linux-only step.
+  const linuxInstallerScripts = resolvedPlatform === 'linux' ? linuxInstallerScriptPaths(buildPaths.root) : {}
   // The kit selects a native engine by testing whether its package directory exists, and it reads
   // any directory it cannot load as a broken native install instead of falling back to WASM. A
   // Linux release declares no native engine, so no such directory may reach the archive: one stray

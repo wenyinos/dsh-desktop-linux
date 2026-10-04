@@ -56,6 +56,9 @@ describe('desktop build paths', () => {
     expect(desktopTargetPlatform('win-x64')).toEqual({ platform: 'win32', arch: 'x64' })
     expect(desktopTargetPlatform('linux-x64')).toEqual({ platform: 'linux', arch: 'x64' })
     expect(desktopTargetPlatform('linux-arm64')).toEqual({ platform: 'linux', arch: 'arm64' })
+    // The FreeBSD target keeps its own platform name although Electron assembles it through the
+    // Linux path; the runtime, native rebuilds, and package assembly all key off that name.
+    expect(desktopTargetPlatform('freebsd-x64')).toEqual({ platform: 'freebsd', arch: 'x64' })
     expect(() => desktopTargetPlatform('linux-ia32' as 'mac-x64')).toThrow(/unsupported target/u)
   })
 
@@ -71,7 +74,8 @@ describe('desktop build paths', () => {
       DSH_DESKTOP_TARGET_PLATFORM: 'linux',
       DSH_DESKTOP_TARGET_ARCH: 'arm64',
     }, 'linux', 'x64')).toBe('linux-arm64')
-    expect(() => resolveDesktopBuildTarget({}, 'freebsd', 'x64')).toThrow(/unsupported target/u)
+    expect(resolveDesktopBuildTarget({}, 'freebsd', 'x64')).toBe('freebsd-x64')
+    expect(() => resolveDesktopBuildTarget({}, 'openbsd', 'x64')).toThrow(/unsupported target/u)
     expect(() => desktopTargetBuildPaths('linux-ia32' as 'mac-x64')).toThrow(/unsupported target/u)
   })
 })

@@ -25,6 +25,11 @@ describe('desktop package target', () => {
     expect(resolveDesktopPackageTarget('linux-arm64', 'linux', 'arm64')).toMatchObject({
       platform: 'linux', arch: 'arm64', builderPlatform: '--linux', builderArch: '--arm64',
     })
+    // FreeBSD assembles through the Linux path: the FreeBSD Electron distribution has the
+    // Linux layout, and the pkg(8) package is formed from the assembled directory.
+    expect(resolveDesktopPackageTarget('freebsd-x64', 'freebsd', 'x64')).toMatchObject({
+      platform: 'freebsd', arch: 'x64', builderPlatform: '--linux', builderArch: '--x64',
+    })
   })
 
   it('marks only the managed-feed targets as carrying updates', () => {
@@ -32,6 +37,7 @@ describe('desktop package target', () => {
     expect(resolveDesktopPackageTarget('win-x64', 'win32', 'x64').managedUpdates).toBe(true)
     expect(resolveDesktopPackageTarget('linux-x64', 'linux', 'x64').managedUpdates).toBe(false)
     expect(resolveDesktopPackageTarget('linux-arm64', 'linux', 'arm64').managedUpdates).toBe(false)
+    expect(resolveDesktopPackageTarget('freebsd-x64', 'freebsd', 'x64').managedUpdates).toBe(false)
   })
 
   it('allows an Apple Silicon host to build the Intel target through Rosetta', () => {
@@ -47,6 +53,9 @@ describe('desktop package target', () => {
     // Linux prepares and smoke-runs the target payload natively, so the host must match it.
     expect(() => resolveDesktopPackageTarget('linux-x64', 'darwin', 'x64')).toThrow(/Linux x64/u)
     expect(() => resolveDesktopPackageTarget('linux-arm64', 'linux', 'x64')).toThrow(/Linux arm64/u)
+    // The FreeBSD package runs the FreeBSD Electron distribution and pkg(8), so its host must be FreeBSD.
+    expect(() => resolveDesktopPackageTarget('freebsd-x64', 'linux', 'x64')).toThrow(/FreeBSD x64/u)
+    expect(() => resolveDesktopPackageTarget('freebsd-x64', 'freebsd', 'arm64')).toThrow(/FreeBSD x64/u)
   })
 
   it('parses installer and unpacked-directory invocations', () => {
@@ -87,6 +96,23 @@ describe('desktop package target', () => {
       'never',
     ])
     expect(desktopElectronBuilderArguments(target, true)).toContain('--dir')
+  })
+
+  it('stops a FreeBSD target at the unpacked directory even without --dir', () => {
+    // The pkg(8) assembly consumes the unpacked directory, so electron-builder must never try to
+    // build a deb or rpm for it.
+    const freebsd = resolveDesktopPackageTarget('freebsd-x64', 'freebsd', 'x64')
+    expect(desktopElectronBuilderArguments(freebsd, false)).toEqual([
+      'exec',
+      'electron-builder',
+      '--config',
+      'electron-builder.config.mjs',
+      '--linux',
+      '--x64',
+      '--publish',
+      'never',
+      '--dir',
+    ])
   })
 
   it('accepts unsigned Windows artifacts and rejects other targets or preparation-only use', () => {

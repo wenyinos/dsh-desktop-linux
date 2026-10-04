@@ -21,6 +21,8 @@ const artifacts = values.unsigned ? paths.unsignedArtifacts : paths.artifacts
  * electron-builder appends the architecture to the unpacked directory for every architecture
  * other than the platform default, so the x64 Linux target lands in `linux-unpacked` while the
  * arm64 target lands in `linux-arm64-unpacked`. macOS names its bundle after the same rule.
+ * The FreeBSD target assembles through the same Linux path and therefore lands in
+ * `linux-unpacked` as well, with the same resources layout.
  * @returns Absolute path of the directory holding the application's resources.
  */
 function assembledApplication(): string {
@@ -31,10 +33,12 @@ function assembledApplication(): string {
 }
 
 const application = assembledApplication()
-const resources = join(application, windows || target.startsWith('linux-') ? 'resources' : 'Resources')
-// Linux keeps the packaged executable beside the resources directory under the Electron binary name.
+const desktopLayout = packaged.platform === 'linux' || packaged.platform === 'freebsd'
+const resources = join(application, windows || desktopLayout ? 'resources' : 'Resources')
+// Linux and FreeBSD keep the packaged executable beside the resources directory under the
+// Electron binary name.
 const executable = windows ? join(application, 'DeepSeek Harness.exe')
-  : target.startsWith('linux-') ? join(application, 'deepseek-harness')
+  : desktopLayout ? join(application, 'deepseek-harness')
     : join(application, 'MacOS', 'DeepSeek Harness')
 const descriptor = await verifyDesktopRuntime(paths.dsh, readDesktopRuntime(paths.dsh).release.version, packaged)
 if (windows && !values.unsigned) await verifyWindowsCode(application)
