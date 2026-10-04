@@ -67,7 +67,15 @@ function electronDependencies(electronRoot: string): PackageDependencies {
     const result = spawnSync('pkg', ['query', '-e', `%n = ${packageName}`, format], { encoding: 'utf8' })
     if (result.error !== undefined) throw result.error
     if (result.status !== 0) {
-      throw new Error(`freebsd package: pkg query for ${packageName} exited with ${String(result.status ?? result.signal)}: ${result.stderr.trim()}`)
+      const probe = spawnSync('pkg', ['--version'], { encoding: 'utf8' })
+      throw new Error([
+        `freebsd package: pkg query for ${packageName} exited with ${String(result.status ?? result.signal)}`,
+        `stdout: ${JSON.stringify(result.stdout)}`,
+        `stderr: ${JSON.stringify(result.stderr)}`,
+        `pkg --version: ${JSON.stringify(probe.stdout)} (status ${String(probe.status)})`,
+        `PATH: ${process.env.PATH ?? ''}`,
+        `cwd: ${process.cwd()}`,
+      ].join('\n'))
     }
     return result.stdout
   }
