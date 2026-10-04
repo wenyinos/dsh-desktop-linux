@@ -2,15 +2,15 @@
 
 English | [中文](README.zh.md)
 
-> ## This repository packages Linux only
+> ## This repository packages Linux and FreeBSD
 >
-> **This is not the upstream project.** It exists for one purpose: building the Linux desktop packages (`.deb` and `.rpm`) that upstream does not ship. No application code is developed here.
+> **This is not the upstream project.** It exists for one purpose: building the Linux and FreeBSD desktop packages (`.deb`/`.rpm` and `.pkg`) that upstream does not ship. No application code is developed here.
 >
 > - **Source code and project documentation:** [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness). Every source file in a release here comes from a released upstream tag.
 > - **Downloads for every platform, including Linux:** [upstream releases](https://github.com/deepseek-ai/deepseek-harness/releases). Prefer those unless you specifically need a Linux package from this repository.
-> - **What this repository adds:** the Linux packaging support only, applied over an upstream source archive at build time. See [Linux support source](apps/desktop/README.md#linux-support-source).
+> - **What this repository adds:** the Linux and FreeBSD packaging support only, applied over an upstream source archive at build time. See [Linux support source](apps/desktop/README.md#linux-support-source) and [FreeBSD packaging notes](docs/freebsd-packaging-notes.md).
 >
-> Linux packages are published on [this repository's releases](https://github.com/wenyinos/dsh-desktop-linux/releases), are unsigned, and carry no in-application update; upgrade by installing a newer package.
+> Linux and FreeBSD packages are published on [this repository's releases](https://github.com/wenyinos/dsh-desktop-linux/releases), are unsigned, and carry no in-application update; upgrade by installing a newer package.
 
 DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
 

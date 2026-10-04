@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for freebsd-packaging-notes.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/freebsd-packaging-notes.md
+/freebsd-packaging-notes:
+  en: 7c5cfb30bd437f75
+  zh: ac1b0dc11c756d14
+/freebsd-packaging-notes/what-ships:
+  en: e72079b2477ba0bb
+  zh: 33f8809d4999d822
+/freebsd-packaging-notes/how-it-is-built:
+  en: 15a2efb4fa61de7d
+  zh: a09298a1b8a1d9a3
+/freebsd-packaging-notes/sharp-edges:
+  en: f87ec9ecdf77636e
+  zh: c3aced323a22ee30
+/freebsd-packaging-notes/sharp-edges/the-freebsd-electron-build-crashes-on-self-spawn:
+  en: 8b476e8a00f8515d
+  zh: 444d175238df947e
+/freebsd-packaging-notes/sharp-edges/pnpm-refuses-freebsd-optional-dependencies:
+  en: 4e9cd1cc09c94beb
+  zh: d1596bbcfc9829ee
+/freebsd-packaging-notes/sharp-edges/npm-s-pkg-shadows-the-system-pkg-8:
+  en: 5ef300361defdc3e
+  zh: 897c2c8f739f9630
+/freebsd-packaging-notes/sharp-edges/freebsd-15-keeps-the-package-database-in-sqlite:
+  en: 6a73c3a57cb87896
+  zh: bda63b66c24e584c
+/freebsd-packaging-notes/sharp-edges/the-office-engine-set-is-empty-on-purpose:
+  en: 5826f1eebf446f8a
+  zh: 34534c2adc6face1
+/freebsd-packaging-notes/sharp-edges/the-zip-based-assumptions-in-the-build-chain:
+  en: 93a92fcc0f7bda44
+  zh: 9411e36b3a456683
+/freebsd-packaging-notes/verifying-a-package:
+  en: af91939d93db12c7
+  zh: 8fa25fa557bfa69f
+/freebsd-packaging-notes/current-limitations:
+  en: b60d2fb77d05426a
+  zh: ce5b5334e1e6ae0d
