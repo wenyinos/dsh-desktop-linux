@@ -34,13 +34,20 @@ export async function smokeDesktopRuntime(
     const pluginName = 'desktop-runtime-smoke-plugin'
     const plugin = join(profile, 'node_modules', pluginName)
     mkdirSync(plugin, { recursive: true })
-    const primary = join(resourcesRuntime, 'primary-runtime')
-    const dependencies = workspaceDependencyPaths(primary, await readPrimaryRuntime(primary))
-    await promisify(execFile)(dependencies.python, ['-I', '-B',
-      fileURLToPath(new URL('../tests/fixtures/office-conversion-inputs.py', import.meta.url)), home],
-    { env: environment, timeout: 120_000, windowsHide: true })
-    const inputs = ['docx', 'xlsx', 'pptx'].map(extension => ({ extension,
-      bytes: readFileSync(join(home, `input.${extension}`)).toString('base64') }))
+    // FreeBSD ships neither the locked Python runtime nor an Office engine, so the conversion
+    // inputs and checks below have nothing to exercise there; the Host, frontend, and plugin
+    // checks still run.
+    const officeHost = process.platform !== 'freebsd'
+    let inputs: { extension: string; bytes: string }[] = []
+    if (officeHost) {
+      const primary = join(resourcesRuntime, 'primary-runtime')
+      const dependencies = workspaceDependencyPaths(primary, await readPrimaryRuntime(primary))
+      await promisify(execFile)(dependencies.python, ['-I', '-B',
+        fileURLToPath(new URL('../tests/fixtures/office-conversion-inputs.py', import.meta.url)), home],
+      { env: environment, timeout: 120_000, windowsHide: true })
+      inputs = ['docx', 'xlsx', 'pptx'].map(extension => ({ extension,
+        bytes: readFileSync(join(home, `input.${extension}`)).toString('base64') }))
+    }
     const cordis = runtime.sharedPackages.find(entry => entry.name === '@deepseek-ai/cordis')
     if (cordis === undefined) throw new Error('desktop runtime: missing shared Cordis package')
     writeFileSync(join(plugin, 'package.json'), JSON.stringify({
@@ -122,15 +129,19 @@ export function apply(ctx) {
         throw new Error(`desktop runtime: invalid ${extension} PDF output`)
       }
     }
-    const cliResponse = await fetch(new URL('/desktop-smoke-office-cli', ready.url), {
-      headers: { cookie }, signal: AbortSignal.timeout(120_000),
-    })
-    if (!cliResponse.ok) throw new Error(`desktop runtime: skill CLI failed: ${await cliResponse.text()}`)
-    const cliResult = await cliResponse.json() as { capabilities: { runtime: { cliPath: string } }; pdf: string }
-    if (!cliResult.capabilities.runtime.cliPath.endsWith('cli.js') || Buffer.from(cliResult.pdf, 'base64').subarray(0, 5).toString() !== '%PDF-') {
-      throw new Error('desktop runtime: skill CLI did not return capabilities and a PDF')
+    if (officeHost) {
+      const cliResponse = await fetch(new URL('/desktop-smoke-office-cli', ready.url), {
+        headers: { cookie }, signal: AbortSignal.timeout(120_000),
+      })
+      if (!cliResponse.ok) throw new Error(`desktop runtime: skill CLI failed: ${await cliResponse.text()}`)
+      const cliResult = await cliResponse.json() as { capabilities: { runtime: { cliPath: string } }; pdf: string }
+      if (!cliResult.capabilities.runtime.cliPath.endsWith('cli.js') || Buffer.from(cliResult.pdf, 'base64').subarray(0, 5).toString() !== '%PDF-') {
+        throw new Error('desktop runtime: skill CLI did not return capabilities and a PDF')
+      }
+      console.log('desktop runtime: DOCX, XLSX, PPTX to PDF and skill CLI discovery passed')
+    } else {
+      console.log('desktop runtime: Host, frontend, and plugin checks passed; Office conversion is unavailable on FreeBSD')
     }
-    console.log('desktop runtime: DOCX, XLSX, PPTX to PDF and skill CLI discovery passed')
   } finally {
     clearTimeout(timer)
     await host.stop()

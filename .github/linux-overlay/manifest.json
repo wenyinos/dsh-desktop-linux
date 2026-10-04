@@ -154,6 +154,10 @@
       "base": "cffcc477e0838f9e995dd1ba52556e4386741400f952eaed943e72003d5f8d8e",
       "replaces": true
     },
+    "apps/desktop/scripts/smoke-runtime.ts": {
+      "base": "65840f4d7295af870ffefff35b69118fc4af19ef9eeb8441d79a006719057690",
+      "replaces": true
+    },
     "apps/desktop/scripts/upload-target.ts": {
       "base": "8978238e548b06d0c452409b8b570b48bacf0da53d8f336eb91bbc9c213fb155",
       "replaces": true

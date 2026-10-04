@@ -175,7 +175,12 @@ async function main(): Promise<void> {
         throw new Error(`desktop runtime: missing private Host file ${file}`)
       }
     }
-    if (!existsSync(join(DSH_OUTPUT_ROOT, 'node_modules', '@deepseek-ai', `libreoffice-kit-${officeEngine}`, 'prebuilds.json'))) {
+    // The FreeBSD runtime carries no Office engine by design: the kit declares every engine —
+    // including the WASM one — for Linux, macOS, and Windows only and rejects other hosts when
+    // an Office feature runs, so the engine package is absent there and the feature reports
+    // itself unavailable instead.
+    if (TARGET_PLATFORM !== 'freebsd'
+      && !existsSync(join(DSH_OUTPUT_ROOT, 'node_modules', '@deepseek-ai', `libreoffice-kit-${officeEngine}`, 'prebuilds.json'))) {
       throw new Error(`desktop runtime: missing required LibreOffice engine ${officeEngine}`)
     }
     // The repaired probe is part of the sealed runtime: it is written before the integrity
