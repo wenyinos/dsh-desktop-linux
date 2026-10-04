@@ -63,11 +63,13 @@ type PackageDependencies = Record<string, { origin: string; version: string }>
  */
 function electronDependencies(electronRoot: string): PackageDependencies {
   const packageName = basename(resolve(electronRoot))
+  // The build tree's PATH carries node_modules/.bin first, and a JavaScript `pkg` package
+  // shadows the system tool there; the FreeBSD package manager is addressed absolutely.
   const runQuery = (format: string): string => {
-    const result = spawnSync('pkg', ['query', '-e', `%n = ${packageName}`, format], { encoding: 'utf8' })
+    const result = spawnSync('/usr/sbin/pkg', ['query', '-e', `%n = ${packageName}`, format], { encoding: 'utf8' })
     if (result.error !== undefined) throw result.error
     if (result.status !== 0) {
-      const probe = spawnSync('pkg', ['--version'], { encoding: 'utf8' })
+      const probe = spawnSync('/usr/sbin/pkg', ['--version'], { encoding: 'utf8' })
       throw new Error([
         `freebsd package: pkg query for ${packageName} exited with ${String(result.status ?? result.signal)}`,
         `stdout: ${JSON.stringify(result.stdout)}`,
@@ -233,12 +235,12 @@ function writeMetadata(
 function createPackage(stage: string, metaRoot: string, plist: string, output: string, packageName: string, version: string): string {
   rmSync(output, { recursive: true, force: true })
   mkdirSync(output, { recursive: true })
-  const result = spawnSync('pkg', ['create', '-r', stage, '-p', plist, '-m', metaRoot, '-o', output], { stdio: 'inherit' })
+  const result = spawnSync('/usr/sbin/pkg', ['create', '-r', stage, '-p', plist, '-m', metaRoot, '-o', output], { stdio: 'inherit' })
   if (result.error !== undefined) throw result.error
   if (result.status !== 0) throw new Error(`freebsd package: pkg create exited with ${String(result.status ?? result.signal)}`)
   const created = join(output, `${packageName}-${version}.pkg`)
   if (!existsSync(created)) throw new Error(`freebsd package: pkg create did not write ${created}`)
-  const read = spawnSync('tar', ['--zstd', '-xOf', created, '+MANIFEST'], { encoding: 'utf8' })
+  const read = spawnSync('/usr/bin/tar', ['--zstd', '-xOf', created, '+MANIFEST'], { encoding: 'utf8' })
   if (read.status !== 0) throw new Error(`freebsd package: cannot read back ${created}`)
   const recorded = JSON.parse(read.stdout) as { name?: unknown; version?: unknown }
   if (recorded.name !== packageName || recorded.version !== version) {
