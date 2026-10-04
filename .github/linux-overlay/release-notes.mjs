@@ -1,10 +1,10 @@
 /**
- * Compose the release notes for a Linux desktop package release.
+ * Compose the release notes for a desktop package release.
  *
  * The notes name the upstream tag the packages were built from, give the install command for
- * each distribution family and architecture, and state the two properties a reader has to know
- * before installing: the packages are unsigned, and they carry no automatic update. Keeping the
- * text in one function keeps every release page consistent and lets a test assert it.
+ * each platform and architecture, and state the two properties a reader has to know before
+ * installing: the packages are unsigned, and they carry no automatic update. Keeping the text
+ * in one function keeps every release page consistent and lets a test assert it.
  *
  * Plain JavaScript on purpose: the publishing job runs it before the workspace has dependencies.
  */
@@ -33,6 +33,20 @@ ${command}
 }
 
 /**
+ * Name the FreeBSD package and the command that installs it.
+ * @param {string} version - Release version without a leading `v`.
+ * @returns {string} A paragraph with the file name and a shell command.
+ */
+function freebsdInstallInstructions(version) {
+  const name = `deepseek-harness-${version}-freebsd-x64.pkg`
+  return `\`${name}\`
+
+\`\`\`sh
+sudo pkg install ./${name}
+\`\`\``
+}
+
+/**
  * Compose the release notes body.
  * @param {object} release - Release identity.
  * @param {string} release.tag - Upstream tag the packages were built from.
@@ -46,7 +60,7 @@ export function releaseNotes({ tag, version, repository, fork }) {
   const self = `https://github.com/${fork}`
   return `## 下载 / Downloads
 
-本仓库只发布 Linux 桌面安装包。源码、其它平台版本与项目文档见[上游仓库](${upstream})。
+本仓库发布 Linux 与 FreeBSD 桌面安装包。源码、其它平台版本与项目文档见[上游仓库](${upstream})。
 
 Debian / Ubuntu：
 
@@ -56,18 +70,22 @@ Fedora / RHEL / openSUSE：
 
 ${installInstructions('rpm', version)}
 
-安装后从应用菜单启动。命令行界面以 \`dsh\` 提供，安装包已将其放入 \`PATH\`，直接在终端运行即可。
+FreeBSD 15（amd64）：
+
+${freebsdInstallInstructions(version)}
+
+FreeBSD 安装包内含 FreeBSD 版的 Electron 运行时，依赖由 \`pkg\` 自动解析。安装后从应用菜单启动。命令行界面以 \`dsh\` 提供，安装包已将其放入 \`PATH\`，直接在终端运行即可。
 
 ## 本次更新 / What's new
 
-由上游 [\`${tag}\`](${upstream}/releases/tag/${tag}) 的源码压缩包构建，并应用本仓库的 [Linux 支持文件](${self}/blob/master/.github/linux-overlay/manifest.json)。上游源码未经修改。
+由上游 [\`${tag}\`](${upstream}/releases/tag/${tag}) 的源码压缩包构建，并应用本仓库的 [桌面支持文件](${self}/blob/master/.github/linux-overlay/manifest.json)。上游源码未经修改。
 
 ## 关于这个版本 / About this build
 
 - 安装包未签名，首次安装时系统可能提示来源未知。
-- Linux 包通过系统包管理器分发，不包含应用内自动更新；升级请安装新版本包。
-- 安装包装入 \`dsh\` 命令与桌面图标。菜单栏的「安装 dsh 命令」入口仅在 macOS 与 Windows 提供，Linux 不需要它；插件管理在所有平台都可在应用内使用。
-- 由 [${fork}](${self}/actions/workflows/release-desktop-linux.yml) 自动构建。
+- Linux 与 FreeBSD 包通过系统包管理器分发，不包含应用内自动更新；升级请安装新版本包。
+- 安装包装入 \`dsh\` 命令与桌面图标。菜单栏的「安装 dsh 命令」入口仅在 macOS 与 Windows 提供，Linux 与 FreeBSD 不需要它；插件管理在所有平台都可在应用内使用。
+- 由 [${fork}](${self}/actions) 中的 Linux 与 FreeBSD 打包工作流自动构建。
 
 **完整变更 / Full Changelog**：[${tag}](${upstream}/releases/tag/${tag})
 `

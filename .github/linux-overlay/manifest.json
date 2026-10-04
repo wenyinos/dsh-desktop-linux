@@ -5,6 +5,10 @@
       "base": "1be663118b2aa066404d5a3041a7e76b714cf09b07461fa2660f31404263729f",
       "replaces": true
     },
+    "apps/desktop/.env.freebsd.example": {
+      "base": null,
+      "replaces": false
+    },
     "apps/desktop/.env.linux.example": {
       "base": null,
       "replaces": false
@@ -94,6 +98,10 @@
       "base": "1402156a2760de1ae1b79727344807ae7be002c62be6dd49ac202efb3c03fd8d",
       "replaces": true
     },
+    "apps/desktop/scripts/freebsd-package.ts": {
+      "base": null,
+      "replaces": false
+    },
     "apps/desktop/scripts/linux-installer-scripts.d.mts": {
       "base": null,
       "replaces": false
@@ -150,6 +158,46 @@
       "base": "79b0c740f9479f3c3c57c15a2aafa2fef63e2a2f2982816bca15b48a9f3ce5a1",
       "replaces": true
     },
+    "native/system/docs/support-matrix.md": {
+      "base": "0c63abb34ba364ea613a67ec6ea525a8c12f36086ec3910643c3afbe08c05d75",
+      "replaces": true
+    },
+    "native/system/packages/entry/package.json": {
+      "base": "d7d004595b5d66bdb7c75d4e7afc6ce7e25eebd0143ff7aaed7cf52b892ca156",
+      "replaces": true
+    },
+    "native/system/packages/entry/src/flock.ts": {
+      "base": "1e13f45a3d627f434098e7b21bf211c051f26d4e019102bf3bfd9f4d1c7614b7",
+      "replaces": true
+    },
+    "native/system/packages/freebsd-x64/LICENSE": {
+      "base": null,
+      "replaces": false
+    },
+    "native/system/packages/freebsd-x64/package.json": {
+      "base": null,
+      "replaces": false
+    },
+    "native/system/packages/freebsd-x64/prebuilds.json": {
+      "base": null,
+      "replaces": false
+    },
+    "native/system/scripts/build.ts": {
+      "base": "e2c2a93788dc81e7a0748c121b732faf7c2291aefe15d843e858135dc42e9637",
+      "replaces": true
+    },
+    "native/system/scripts/github-matrix.mjs": {
+      "base": "0fcf403d92a2e29bfbdbf58bc849fe7857dcdd4db5cfdb2bb11c905ef5c596ac",
+      "replaces": true
+    },
+    "native/system/scripts/repo.mjs": {
+      "base": "bd7df63c02ffdb0725080dc3f38530606cd4bb80d59129f99981110a23082aa8",
+      "replaces": true
+    },
+    "native/system/test/package-matrix.test.js": {
+      "base": "95efedce6f7d8223cf7b004079c51893249fedacc54897f2db7794d2a27599a0",
+      "replaces": true
+    },
     "package.json": {
       "base": "a303ffb8994be8e7a874bc887db1abd47a77a6e08872e65f1d65281f43eab91b",
       "replaces": true,
@@ -158,11 +206,13 @@
   },
   "excluded": {
     ".github/linux-overlay/apply.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
+    ".github/linux-overlay/build-freebsd.sh": "Overlay machinery: the FreeBSD packaging workflow runs it from this repository and it is never copied onto the upstream tree.",
     ".github/linux-overlay/manifest.json": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".github/linux-overlay/probe-office-engine.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".github/linux-overlay/release-notes.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".github/linux-overlay/verify-manifest.mjs": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".github/workflows/pages.yml": "Site deployment: it runs from this repository and is never copied onto the upstream tree.",
+    ".github/workflows/release-desktop-freebsd.yml": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".github/workflows/release-desktop-linux.yml": "Overlay machinery: it runs from this repository and is never copied onto the upstream tree.",
     ".zcodeignore": "Agent tooling state that must not be committed; the repository ignores it.",
     "README.i18n.yaml": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",

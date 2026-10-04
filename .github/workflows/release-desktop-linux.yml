@@ -363,7 +363,9 @@ jobs:
           notes="$RUNNER_TEMP/release-notes.md"
           node "$GITHUB_WORKSPACE/.github/linux-overlay/release-notes.mjs" \
             "${TAG}" "${VERSION}" "${UPSTREAM}" "${GITHUB_REPOSITORY}" > "$notes"
-          title="DeepSeek Harness ${VERSION} (Linux)"
+          # The FreeBSD workflow publishes to the same release and writes the same title and
+          # notes, so either workflow may publish last without changing what the page shows.
+          title="DeepSeek Harness ${VERSION}"
           # A rebuild replaces the assets in place. Deleting the release first would leave
           # nothing published if the replacement then failed, which is a worse outcome than a
           # release that briefly carries the previous build.
