@@ -64,10 +64,11 @@ type PackageDependencies = Record<string, { origin: string; version: string }>
 function electronDependencies(electronRoot: string): PackageDependencies {
   const packageName = basename(resolve(electronRoot))
   const installed = readdirSync('/var/db/pkg').filter(entry => entry.startsWith(`${packageName}-`)).sort()
-  if (installed.length !== 1) {
-    throw new Error(`freebsd package: expected one installed ${packageName} package, found ${String(installed.length)}`)
+  const [installedPackage] = installed
+  if (installedPackage === undefined || installed.length > 1) {
+    throw new Error(`freebsd package: expected exactly one installed ${packageName} package, found ${String(installed.length)}`)
   }
-  const manifest = JSON.parse(readFileSync(join('/var/db/pkg', installed[0], '+MANIFEST'), 'utf8')) as {
+  const manifest = JSON.parse(readFileSync(join('/var/db/pkg', installedPackage, '+MANIFEST'), 'utf8')) as {
     deps?: Record<string, { origin?: unknown; version?: unknown }>
   }
   const deps: PackageDependencies = {}

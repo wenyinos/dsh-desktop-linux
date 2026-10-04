@@ -67,7 +67,7 @@ function prepareFreebsdElectron(): void {
  */
 async function prepareElectron(platform: 'darwin' | 'win32' | 'linux' | 'freebsd', arch: string): Promise<string> {
   if (platform === 'freebsd') {
-    await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'install:freebsd-electron', () => prepareFreebsdElectron())
+    await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'install:freebsd-electron', async () => prepareFreebsdElectron())
   }
   else {
     const require = createRequire(import.meta.url)
