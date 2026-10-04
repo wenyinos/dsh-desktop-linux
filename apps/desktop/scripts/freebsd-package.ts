@@ -10,7 +10,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
 import { DESKTOP_BUILD_VERSION_ENV } from './desktop-build-version.mjs'
@@ -54,30 +54,36 @@ type PackageDependencies = Record<string, { origin: string; version: string }>
 /**
  * Read the runtime dependencies of the installed FreeBSD Electron package.
  *
- * The package database keeps each installed package's manifest under `/var/db/pkg`, and the
- * Electron package's own dependency map is the authoritative list of the libraries its binaries
- * need. Its version values are the ones this build ran against, which is what a dependency
- * records; pkg(8) resolves them by name and origin on the installing system.
+ * FreeBSD 15 keeps its package database in SQLite, so the dependencies come from `pkg query`
+ * rather than a per-package manifest directory. The recorded versions are the ones this build
+ * ran against, which is what a dependency records; pkg(8) resolves them by name and origin on
+ * the installing system.
  * @param electronRoot - Installed Electron distribution directory, e.g. `/usr/local/share/electron44`.
  * @returns Dependency map in pkg manifest form.
  */
 function electronDependencies(electronRoot: string): PackageDependencies {
   const packageName = basename(resolve(electronRoot))
-  const installed = readdirSync('/var/db/pkg').filter(entry => entry.startsWith(`${packageName}-`)).sort()
-  const [installedPackage] = installed
-  if (installedPackage === undefined || installed.length > 1) {
-    throw new Error(`freebsd package: expected exactly one installed ${packageName} package, found ${String(installed.length)}`)
+  const runQuery = (format: string): string => {
+    const result = spawnSync('pkg', ['query', '-e', `%n = ${packageName}`, format], { encoding: 'utf8' })
+    if (result.error !== undefined) throw result.error
+    if (result.status !== 0) {
+      throw new Error(`freebsd package: pkg query for ${packageName} exited with ${String(result.status ?? result.signal)}: ${result.stderr.trim()}`)
+    }
+    return result.stdout
   }
-  const manifest = JSON.parse(readFileSync(join('/var/db/pkg', installedPackage, '+MANIFEST'), 'utf8')) as {
-    deps?: Record<string, { origin?: unknown; version?: unknown }>
+  const identity = runQuery('%n %v').split('\n').filter(line => line.trim() !== '')
+  if (identity.length !== 1) {
+    throw new Error(`freebsd package: expected exactly one installed ${packageName} package, found ${String(identity.length)}`)
   }
   const deps: PackageDependencies = {}
-  for (const [name, entry] of Object.entries(manifest.deps ?? {})) {
-    if (name === 'pkg') continue
-    if (typeof entry.origin !== 'string' || typeof entry.version !== 'string') {
-      throw new Error(`freebsd package: the Electron package declares an unreadable dependency on ${name}`)
+  for (const line of runQuery('%dn %do %dv').split('\n')) {
+    if (line.trim() === '') continue
+    const [name, origin, version] = line.split(' ')
+    if (name === undefined || origin === undefined || version === undefined) {
+      throw new Error(`freebsd package: cannot read a pkg query dependency line for ${packageName}: ${line}`)
     }
-    deps[name] = { origin: entry.origin, version: entry.version }
+    if (name === 'pkg') continue
+    deps[name] = { origin, version }
   }
   if (Object.keys(deps).length === 0) throw new Error(`freebsd package: ${packageName} declares no runtime dependencies`)
   return deps
