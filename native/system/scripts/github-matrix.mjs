@@ -11,15 +11,22 @@
 import path from 'node:path';
 import { platformDirs, readJson, root } from './repo.mjs';
 
-/** GitHub runner per prebuilds.json `platform` value — native builders only, no cross toolchain. */
+/**
+ * GitHub runner per prebuilds.json `platform` value — native builders only, no cross toolchain.
+ * A null entry marks a platform this repository charges no hosted runner for: the FreeBSD addon
+ * is compiled in the FreeBSD packaging workflow's virtual machine, so it stays out of these
+ * matrices while remaining a declared platform package.
+ */
 const RUNNERS = {
   'linux-x64': 'ubuntu-24.04',
   'linux-arm64': 'ubuntu-24.04-arm',
   'darwin-x64': 'macos-15-intel',
   'darwin-arm64': 'macos-latest',
+  'freebsd-x64': null,
 };
 
 function runnerFor(platform) {
+  if (platform in RUNNERS && RUNNERS[platform] === null) return null;
   const runner = RUNNERS[platform];
   if (!runner) {
     throw new Error(`missing GitHub runner for platform: ${platform}`);
@@ -38,19 +45,24 @@ function platformManifests() {
 function ciMatrix() {
   const platforms = [...new Set(platformManifests().map(({ prebuilds }) => prebuilds.platform))].sort();
   return {
-    include: platforms.map((platform) => ({ platform, runner: runnerFor(platform) })),
+    include: platforms.filter((platform) => runnerFor(platform) !== null)
+      .map((platform) => ({ platform, runner: runnerFor(platform) })),
   };
 }
 
 function releasePrebuildMatrix() {
   return {
-    include: platformManifests().map(({ dir, name, prebuilds }) => ({
-      platform: prebuilds.platform,
-      package: name,
-      dir,
-      runner: runnerFor(prebuilds.platform),
-      artifact: `prebuild-${name}`,
-    })),
+    include: platformManifests().flatMap(({ dir, name, prebuilds }) => {
+      const runner = runnerFor(prebuilds.platform);
+      if (runner === null) return [];
+      return [{
+        platform: prebuilds.platform,
+        package: name,
+        dir,
+        runner,
+        artifact: `prebuild-${name}`,
+      }];
+    }),
   };
 }
 

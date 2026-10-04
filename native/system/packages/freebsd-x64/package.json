@@ -1,0 +1,30 @@
+{
+  "name": "@deepseek-ai/node-addon-system-freebsd-x64",
+  "version": "0.1.2",
+  "description": "FreeBSD x64 system binaries: Node-API flock addon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "native/system/packages/freebsd-x64"
+  },
+  "os": [
+    "freebsd"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bin/",
+    "prebuilds.json"
+  ],
+  "scripts": {
+    "prepack": "node ../../scripts/verify-launcher-binary.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "BSD-3-Clause",
+  "publishConfig": {
+    "access": "public"
+  }
+}
