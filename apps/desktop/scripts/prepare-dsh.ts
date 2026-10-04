@@ -52,6 +52,13 @@ const NODE_PTY_PATCH_KEY = 'node-pty@1.2.0-beta.15'
 const NODE = join(BUILD_PATHS.electron, ...TARGET_PLATFORM === 'darwin'
   ? ['Electron.app', 'Contents', 'MacOS', 'Electron']
   : [TARGET_PLATFORM === 'win32' ? 'electron.exe' : 'electron'])
+/**
+ * Node executable that runs the runtime installation. The FreeBSD Electron distribution's
+ * child_process patching crashes the install scripts' probes (koffi's prebuild check spawns the
+ * running executable), so the host Node runs them there; the addons compile against stable
+ * Node-API and the packaged Electron loads them unchanged.
+ */
+const INSTALL_NODE = TARGET_PLATFORM === 'freebsd' ? process.execPath : NODE
 const PNPM = join(RUNTIME_ROOT, 'pnpm', 'bin', 'pnpm.mjs')
 
 function manifestVersion(path: string, subject: string): string {
@@ -85,7 +92,7 @@ function runPnpm(args: readonly string[]): Promise<void> {
     const userConfig = join(config, 'npmrc')
     mkdirSync(config, { recursive: true })
     writeFileSync(userConfig, '')
-    const child = spawn(NODE, [
+    const child = spawn(INSTALL_NODE, [
       '--expose-internals',
       PNPM,
       `--config.registry=${registry}`,
@@ -103,7 +110,7 @@ function runPnpm(args: readonly string[]): Promise<void> {
         NPM_CONFIG_REGISTRY: registry,
         NPM_CONFIG_STORE_DIR: STORE_ROOT,
         NPM_CONFIG_USERCONFIG: userConfig,
-        ...desktopNodeEnvironment(NODE, join(RUNTIME_ROOT, 'bin'), {}),
+        ...desktopNodeEnvironment(INSTALL_NODE, join(RUNTIME_ROOT, 'bin'), {}),
         PATH: `${join(RUNTIME_ROOT, 'bin')}${delimiter}${process.env.PATH ?? ''}`,
         XDG_CACHE_HOME: join(PNPM_BUILD_STATE, 'cache'),
         XDG_CONFIG_HOME: config,
