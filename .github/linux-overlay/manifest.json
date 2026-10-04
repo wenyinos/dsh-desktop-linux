@@ -110,6 +110,14 @@
       "base": null,
       "replaces": false
     },
+    "apps/desktop/scripts/node-bin/child-process-hook.cjs": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/scripts/node-bin/node": {
+      "base": "70e7283062bf127839ed8318e03f7c61e807bd1f257bcc12cfde896aa3395a09",
+      "replaces": true
+    },
     "apps/desktop/scripts/office-engine-presence-fixup.ts": {
       "base": null,
       "replaces": false
@@ -142,8 +150,16 @@
       "base": "6b5f35f5d7f3dafd9cee33dbaff8370bd7b513591bf3e49052491712b6da94f0",
       "replaces": true
     },
+    "apps/desktop/scripts/smoke-prepared-runtime.ts": {
+      "base": "cffcc477e0838f9e995dd1ba52556e4386741400f952eaed943e72003d5f8d8e",
+      "replaces": true
+    },
     "apps/desktop/scripts/upload-target.ts": {
       "base": "8978238e548b06d0c452409b8b570b48bacf0da53d8f336eb91bbc9c213fb155",
+      "replaces": true
+    },
+    "apps/desktop/src/host-process.ts": {
+      "base": "6b9d3e558f526b7832020fb43d6682a07a68bf2d5657f26951f50a4f3eabfa28",
       "replaces": true
     },
     "apps/desktop/src/project-manager.ts": {

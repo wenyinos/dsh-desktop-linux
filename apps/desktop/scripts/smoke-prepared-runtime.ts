@@ -1,4 +1,5 @@
 /** Check payloads and Host boot with private native-cache and Harness directories. */
+import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -28,7 +29,12 @@ export async function smokePreparedRuntime(
   try {
     const archive = runtimeArchivePath(root)
     if (archive !== undefined) await verifyRuntimeArchive(archive, descriptor)
-    const { stdout } = await promisify(execFile)(node, [
+    // FreeBSD's Electron crashes its own child-process patch when it spawns itself, and this
+    // fixture spawns the running executable; the bundled Node stub starts the fixture instead,
+    // and its hook covers the fixture's own spawns the same way the packaged application does.
+    const stub = join(resourcesRuntime, 'bin', 'node')
+    const launch = process.platform === 'freebsd' && existsSync(stub) ? stub : node
+    const { stdout } = await promisify(execFile)(launch, [
       '--expose-internals', resolve(import.meta.dirname, '../tests/fixtures/runtime-payload-smoke.mjs'), root, resourcesRuntime,
     ], { timeout: 120_000, windowsHide: true,
       env: desktopNodeEnvironment(node, join(resourcesRuntime, 'bin'), environment) })

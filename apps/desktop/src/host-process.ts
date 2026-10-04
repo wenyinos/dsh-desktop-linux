@@ -1,5 +1,6 @@
 /** Electron Node-mode child lifecycle for the shared Web application. */
 
+import { existsSync } from 'node:fs'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { join } from 'node:path'
 import type { PlatformSession } from '@deepseek-ai/dsh-deepseek-account'
@@ -180,13 +181,26 @@ export class DesktopHostProcess {
   ) {}
 
   /**
+   * Executable that starts the Host. The FreeBSD Electron distribution crashes its own
+   * child-process patch when it spawns itself with `ELECTRON_RUN_AS_NODE` set, so the bundled
+   * Node stub starts the same executable there; the stub execs the path named by
+   * `DSH_DESKTOP_NODE_EXECUTABLE`, which the environment below still points at the application.
+   * @returns Absolute path of the executable to spawn.
+   */
+  private launchNode(): string {
+    if (process.platform !== 'freebsd') return this.node
+    const stub = this.packageManager === undefined ? undefined : join(this.packageManager.nodeBin, 'node')
+    return stub !== undefined && existsSync(stub) ? stub : this.node
+  }
+
+  /**
    * Start this child once and await its Web application URL.
    * @returns Ready facts supplied by the child after application startup.
    */
   async start(): Promise<DesktopHostReady> {
     if (this.child !== undefined) return this.readyPromise
     const entry = join(this.runtimeDir, 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'index.js')
-    const child = spawn(this.node, [
+    const child = spawn(this.launchNode(), [
       '--expose-internals',
       ...(this.inspectPort === undefined ? [] : [`--inspect=127.0.0.1:${String(this.inspectPort)}`]),
       entry,

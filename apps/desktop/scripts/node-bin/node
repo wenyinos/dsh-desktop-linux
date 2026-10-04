@@ -1,3 +1,10 @@
 #!/bin/sh
+# Start the bundled Electron as Node. On FreeBSD the executable's own child-process patch
+# crashes when it spawns itself with ELECTRON_RUN_AS_NODE set, so the hook beside this script
+# reroutes exactly those spawns back through this stub.
 export ELECTRON_RUN_AS_NODE=1
+directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+if [ "$(uname -s)" = "FreeBSD" ] && [ -f "$directory/child-process-hook.cjs" ]; then
+  exec "$DSH_DESKTOP_NODE_EXECUTABLE" --expose-internals --require "$directory/child-process-hook.cjs" "$@"
+fi
 exec "$DSH_DESKTOP_NODE_EXECUTABLE" --expose-internals "$@"
