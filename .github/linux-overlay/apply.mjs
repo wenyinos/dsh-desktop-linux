@@ -11,7 +11,7 @@
 
 import { createHash } from 'node:crypto'
 import { copyFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
@@ -58,37 +58,68 @@ function isPlainObject(value) {
 }
 
 /**
- * Add the FreeBSD platform package to the build tree's lockfile importers.
+ * Align the build tree's lockfile with the files this overlay replaces.
  *
- * The overlay replaces the system entry's manifest with one that declares a FreeBSD optional
- * dependency, and pnpm's frozen install refuses a lockfile whose entry importer disagrees with
- * the manifest. The addition is a workspace link with no registry resolution, so the lines this
- * repository's own lockfile carries can be patched into the archived lockfile without
- * invalidating anything else the upstream tree locks — which an overlay replacement of the
- * whole file would have hidden. The patch is idempotent and refuses to guess when upstream no
- * longer carries the anchors it edits.
+ * Two regions need it. The overlay replaces the system entry's manifest with one that declares
+ * a FreeBSD optional dependency, and pnpm's frozen install refuses a lockfile whose entry
+ * importer disagrees with the manifest; that addition is a workspace link with no registry
+ * resolution, so the lines this repository's own lockfile carries can be patched in without
+ * invalidating anything else the upstream tree locks. Second, a patch file this fork edits (the
+ * node-pty FreeBSD compile fix) changes the hash pnpm records in `patchedDependencies`, and it
+ * records the patch file's SHA-256, which is computed here from the source tree. The patch is
+ * idempotent and refuses to guess when upstream no longer carries the anchors it edits.
+ * @param {string} source - This repository's tree, holding the patch files.
  * @param {string} target - Extracted upstream source tree to overlay onto.
- * @returns {boolean} Whether the lockfile gained the entries in this call.
+ * @returns {{ importers: boolean, patches: string[] }} Regions the call changed, if any.
  */
-export function patchLockfile(target) {
+export function patchLockfile(source, target) {
   const path = join(target, 'pnpm-lock.yaml')
-  if (sha256(path) === null) return false
-  const text = readFileSync(path, 'utf8')
-  if (text.includes('node-addon-system-freebsd-x64')) return false
-  const specifierAnchor = "      '@deepseek-ai/node-addon-system-darwin-x64':\n"
-    + '        specifier: workspace:~\n'
-    + '        version: link:../darwin-x64\n'
-  const importerAnchor = '  native/system/packages/linux-arm64: {}\n'
-  if (!text.includes(specifierAnchor) || !text.includes(importerAnchor)) {
-    throw new Error('linux overlay: the lockfile no longer carries the importer anchors the FreeBSD patch edits; reconcile it with upstream')
-  }
-  const patched = text
-    .replace(specifierAnchor, `${specifierAnchor}      '@deepseek-ai/node-addon-system-freebsd-x64':\n`
+  if (sha256(path) === null) return { importers: false, patches: [] }
+  let text = readFileSync(path, 'utf8')
+  const untouched = text
+  let importers = false
+  if (!text.includes('node-addon-system-freebsd-x64')) {
+    const specifierAnchor = "      '@deepseek-ai/node-addon-system-darwin-x64':\n"
       + '        specifier: workspace:~\n'
-      + '        version: link:../freebsd-x64\n')
-    .replace(importerAnchor, `  native/system/packages/freebsd-x64: {}\n\n${importerAnchor}`)
-  writeFileSync(path, patched)
-  return true
+      + '        version: link:../darwin-x64\n'
+    const importerAnchor = '  native/system/packages/linux-arm64: {}\n'
+    if (!text.includes(specifierAnchor) || !text.includes(importerAnchor)) {
+      throw new Error('linux overlay: the lockfile no longer carries the importer anchors the FreeBSD patch edits; reconcile it with upstream')
+    }
+    text = text
+      .replace(specifierAnchor, `${specifierAnchor}      '@deepseek-ai/node-addon-system-freebsd-x64':\n`
+        + '        specifier: workspace:~\n'
+        + '        version: link:../freebsd-x64\n')
+      .replace(importerAnchor, `  native/system/packages/freebsd-x64: {}\n\n${importerAnchor}`)
+    importers = true
+  }
+  const patches = []
+  const manifest = JSON.parse(readFileSync(join(OVERLAY_ROOT, 'manifest.json'), 'utf8'))
+  for (const file of Object.keys(manifest.files)) {
+    if (!file.startsWith('patches/') || !file.endsWith('.patch')) continue
+    const hash = sha256(join(source, file))
+    if (hash === null) continue
+    // The lockfile keys a patch by the dependency it targets: `node-pty@1.2.0-beta.15` for
+    // `node-pty@1.2.0-beta.15.patch`, with scoped names flattened with double underscores.
+    const key = basename(file, '.patch').replaceAll('__', '/')
+    const entry = new RegExp(`^  ${key.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}: [0-9a-f]{64}$`, 'mu')
+    const match = entry.exec(text)
+    if (match === null) {
+      throw new Error(`linux overlay: the lockfile has no patchedDependencies entry for ${key}; reconcile it with upstream`)
+    }
+    const recorded = /: ([0-9a-f]{64})$/u.exec(match[0])?.[1]
+    if (recorded === undefined) {
+      throw new Error(`linux overlay: the patchedDependencies entry for ${key} carries no hash`)
+    }
+    if (recorded === hash) continue
+    text = text.replace(entry, `  ${key}: ${hash}`)
+    // The same hash appears on the importer's version reference and the snapshot key, and pnpm
+    // compares all three, so they move together.
+    text = text.replaceAll(`patch_hash=${recorded}`, `patch_hash=${hash}`)
+    patches.push(file)
+  }
+  if (text !== untouched) writeFileSync(path, text)
+  return { importers, patches }
 }
 
 /**
@@ -151,7 +182,7 @@ if (process.argv[1] !== undefined && import.meta.filename === resolve(process.ar
     process.stdout.write(`::warning title=Upstream changed overlaid files::${String(result.drifted.length)} file(s) replaced by this fork also changed upstream; review the replacements against the new upstream source:\n`)
     for (const path of result.drifted) process.stdout.write(`  ${path}\n`)
   }
-  if (patchLockfile(resolve(values.target))) {
-    process.stdout.write('linux overlay: patched the lockfile with the FreeBSD platform package\n')
-  }
+  const lockfile = patchLockfile(resolve(values.source), resolve(values.target))
+  if (lockfile.importers) process.stdout.write('linux overlay: patched the lockfile with the FreeBSD platform package\n')
+  if (lockfile.patches.length > 0) process.stdout.write(`linux overlay: recorded the new hash of ${lockfile.patches.join(', ')}\n`)
 }

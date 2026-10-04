@@ -146,6 +146,10 @@
       "base": "8978238e548b06d0c452409b8b570b48bacf0da53d8f336eb91bbc9c213fb155",
       "replaces": true
     },
+    "apps/desktop/src/project-manager.ts": {
+      "base": "2ad0aacba5377e82c1ed2bd70f52003ffdf91fa0e287dd3d51cfd896f2249748",
+      "replaces": true
+    },
     "apps/desktop/tests/desktop-auto-update-environment.spec.ts": {
       "base": "0d94ef998389a14863adc8b7cc4abb76c79096ffa3731b03ff3ee598dcac0b59",
       "replaces": true

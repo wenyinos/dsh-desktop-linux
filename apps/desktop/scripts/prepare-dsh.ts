@@ -35,6 +35,7 @@ import { desktopRuntimeFileExclusion } from './runtime-file-policy.ts'
 import { selectOfficeEngine } from '../../../scripts/libreoffice-packages.mjs'
 
 const APP_ROOT = resolve(import.meta.dirname, '..')
+const REPOSITORY_ROOT = resolve(APP_ROOT, '..', '..')
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
 const DSH_OUTPUT_ROOT = BUILD_PATHS.dsh
 const BUILD_ROOT = mkdtempSync(join(tmpdir(), 'dsh-desktop-runtime-'))
@@ -43,6 +44,10 @@ const RUNTIME_ROOT = BUILD_PATHS.runtime
 const PNPM_BUILD_STATE = BUILD_PATHS.dshPnpm
 const PACKAGE_SET_ROOT = BUILD_PATHS.packageSet
 const TARGET_PLATFORM = desktopTargetPlatform(resolveDesktopBuildTarget()).platform
+/** pnpm patch the FreeBSD runtime install applies to node-pty before compiling its addon. */
+const NODE_PTY_PATCH = 'patches/node-pty@1.2.0-beta.15.patch'
+/** The dependency the patch names; its file name carries the pinned version. */
+const NODE_PTY_PATCH_KEY = 'node-pty@1.2.0-beta.15'
 /** The Electron executable of the prepared distribution, used as the Node runtime for the bundled dsh. */
 const NODE = join(BUILD_PATHS.electron, ...TARGET_PLATFORM === 'darwin'
   ? ['Electron.app', 'Contents', 'MacOS', 'Electron']
@@ -125,7 +130,15 @@ async function main(): Promise<void> {
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:stage-packages', async () => {
       copyFileSync(join(PACKAGE_SET_ROOT, DESKTOP_PACKAGE_SET_FILE), join(BUILD_ROOT, DESKTOP_PACKAGE_SET_FILE))
       cpSync(join(PACKAGE_SET_ROOT, DESKTOP_PACKAGES_DIR), join(BUILD_ROOT, DESKTOP_PACKAGES_DIR), { recursive: true })
-      createRuntimeProjectMetadata(BUILD_ROOT, release)
+      // The runtime install compiles node-pty from source on FreeBSD, so the packaging project
+      // carries the same patch the workspace lockfile applies and declares it for pnpm.
+      const patchedDependencies: Record<string, string> = {}
+      if (TARGET_PLATFORM === 'freebsd') {
+        mkdirSync(join(BUILD_ROOT, 'patches'), { recursive: true })
+        copyFileSync(join(REPOSITORY_ROOT, NODE_PTY_PATCH), join(BUILD_ROOT, NODE_PTY_PATCH))
+        patchedDependencies[NODE_PTY_PATCH_KEY] = NODE_PTY_PATCH
+      }
+      createRuntimeProjectMetadata(BUILD_ROOT, release, patchedDependencies)
     })
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:lockfile', () => runPnpm(['install', '--lockfile-only']))
     verifyDesktopCoreLockfile(

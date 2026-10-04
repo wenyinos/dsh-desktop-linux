@@ -35,17 +35,31 @@ function writeJson(path: string, value: unknown): void {
   writeFileSync(path, `${JSON.stringify(value, undefined, 2)}\n`, { mode: 0o600 })
 }
 
-function workspaceFile(overrides: Readonly<Record<string, string>> = {}): string {
+/**
+ * Render the pnpm workspace file for a Desktop profile or the packaging-time runtime project.
+ * @param overrides - Core package overrides; empty for a profile that installs nothing.
+ * @param patchedDependencies - Patch entries relative to the project directory; the packaging
+ *   runtime passes the node-pty patch so the FreeBSD build compiles it from patched sources.
+ * @returns The pnpm-workspace.yaml contents.
+ */
+function workspaceFile(
+  overrides: Readonly<Record<string, string>> = {},
+  patchedDependencies: Readonly<Record<string, string>> = {},
+): string {
   const entries = Object.entries(overrides).sort(([left], [right]) => left.localeCompare(right))
   const overrideSection = entries.length === 0
     ? ''
     : `overrides:\n${entries.map(([name, spec]) => `  ${JSON.stringify(name)}: ${JSON.stringify(spec)}`).join('\n')}\n`
-  if (entries.length === 0) return `packages:\n  - .\n\n${WORKSPACE_SETTINGS}`
+  const patches = Object.entries(patchedDependencies).sort(([left], [right]) => left.localeCompare(right))
+  const patchSection = patches.length === 0
+    ? ''
+    : `patchedDependencies:\n${patches.map(([name, spec]) => `  ${JSON.stringify(name)}: ${JSON.stringify(spec)}`).join('\n')}\n`
+  if (entries.length === 0 && patches.length === 0) return `packages:\n  - .\n\n${WORKSPACE_SETTINGS}`
   const coreBuildSpec = overrides[CORE_BUILD_PACKAGE]
   const coreBuildKey = coreBuildSpec === undefined
     ? CORE_BUILD_PACKAGE
     : `${CORE_BUILD_PACKAGE}@${coreBuildSpec.replace('file:./', 'file:')}`
-  return `packages:\n  - .\n\n${overrideSection}${WORKSPACE_SETTINGS}allowBuilds:\n  node-pty: true\n  koffi: true\n  fs-ext: true\n  ${JSON.stringify(coreBuildKey)}: true\n  '@google/genai': false\n  protobufjs: false\n  node-addon-require-builtin: false\n`
+  return `packages:\n  - .\n\n${overrideSection}${patchSection}${WORKSPACE_SETTINGS}allowBuilds:\n  node-pty: true\n  koffi: true\n  fs-ext: true\n  ${JSON.stringify(coreBuildKey)}: true\n  '@google/genai': false\n  protobufjs: false\n  node-addon-require-builtin: false\n`
 }
 
 function migrateProfileSettings(projectDir: string): void {
@@ -130,8 +144,18 @@ export class DesktopProjectManager {
   }
 }
 
-/** Create build-only project metadata for materializing the signed runtime. */
-export function createRuntimeProjectMetadata(projectDir: string, release: DesktopRelease): void {
+/**
+ * Create build-only project metadata for materializing the signed runtime.
+ * @param projectDir - Packaging-time project directory.
+ * @param release - Release identity the core package set must match.
+ * @param patchedDependencies - Patch entries relative to the project directory; the FreeBSD
+ *   packaging run declares the node-pty patch so pnpm applies it before compiling.
+ */
+export function createRuntimeProjectMetadata(
+  projectDir: string,
+  release: DesktopRelease,
+  patchedDependencies: Readonly<Record<string, string>> = {},
+): void {
   mkdirSync(projectDir, { recursive: true, mode: 0o700 })
   const packageSet = verifyDesktopCorePackageSet(projectDir, release.version)
   const manifest = {
@@ -144,7 +168,7 @@ export function createRuntimeProjectMetadata(projectDir: string, release: Deskto
   writeJson(join(projectDir, 'package.json'), manifest)
   writeFileSync(
     join(projectDir, 'pnpm-workspace.yaml'),
-    workspaceFile(desktopCorePackageOverrides(packageSet)),
+    workspaceFile(desktopCorePackageOverrides(packageSet), patchedDependencies),
     { mode: 0o600 },
   )
 }
