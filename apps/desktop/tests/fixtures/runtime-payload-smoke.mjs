@@ -163,7 +163,9 @@ try {
   assert.equal(typeof builtin.requireBuiltin('internal/modules/esm/loader').getOrInitializeCascadedLoader, 'function')
   checkPnpm()
   checkKoffi()
-  await checkSharp()
+  // FreeBSD carries no usable sharp variant: the platform's optional package is not linked by
+  // the installer, so the check reports the module unavailable rather than failing the smoke.
+  if (process.platform !== 'freebsd') await checkSharp()
   checkHtml()
   await checkPty()
   await checkSearch()
@@ -175,5 +177,5 @@ try {
 // Natural event-loop drain includes node-pty's worker and console-list helper teardown.
 process.once('beforeExit', () => {
   console.log(JSON.stringify({ node: process.versions.node, platform: process.platform, arch: process.arch,
-    koffi: true, sharp: true, html: true, pty: true, pnpm: true, grep: true, glob: true }))
+    koffi: true, sharp: process.platform !== 'freebsd', html: true, pty: true, pnpm: true, grep: true, glob: true }))
 })
