@@ -30,6 +30,9 @@ on:
   schedule:
     # Daily, off the hour and after the Linux workflow, whose release the two share.
     - cron: '23 4 * * *'
+  push:
+    # Iteration trigger for the packaging branch; removed before this workflow lands on master.
+    branches: [freebsd-packaging]
 
 permissions:
   contents: write
