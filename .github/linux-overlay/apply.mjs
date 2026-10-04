@@ -58,6 +58,40 @@ function isPlainObject(value) {
 }
 
 /**
+ * Add the FreeBSD platform package to the build tree's lockfile importers.
+ *
+ * The overlay replaces the system entry's manifest with one that declares a FreeBSD optional
+ * dependency, and pnpm's frozen install refuses a lockfile whose entry importer disagrees with
+ * the manifest. The addition is a workspace link with no registry resolution, so the lines this
+ * repository's own lockfile carries can be patched into the archived lockfile without
+ * invalidating anything else the upstream tree locks — which an overlay replacement of the
+ * whole file would have hidden. The patch is idempotent and refuses to guess when upstream no
+ * longer carries the anchors it edits.
+ * @param {string} target - Extracted upstream source tree to overlay onto.
+ * @returns {boolean} Whether the lockfile gained the entries in this call.
+ */
+export function patchLockfile(target) {
+  const path = join(target, 'pnpm-lock.yaml')
+  if (sha256(path) === null) return false
+  const text = readFileSync(path, 'utf8')
+  if (text.includes('node-addon-system-freebsd-x64')) return false
+  const specifierAnchor = "      '@deepseek-ai/node-addon-system-darwin-x64':\n"
+    + '        specifier: workspace:~\n'
+    + '        version: link:../darwin-x64\n'
+  const importerAnchor = '  native/system/packages/linux-arm64: {}\n'
+  if (!text.includes(specifierAnchor) || !text.includes(importerAnchor)) {
+    throw new Error('linux overlay: the lockfile no longer carries the importer anchors the FreeBSD patch edits; reconcile it with upstream')
+  }
+  const patched = text
+    .replace(specifierAnchor, `${specifierAnchor}      '@deepseek-ai/node-addon-system-freebsd-x64':\n`
+      + '        specifier: workspace:~\n'
+      + '        version: link:../freebsd-x64\n')
+    .replace(importerAnchor, `  native/system/packages/freebsd-x64: {}\n\n${importerAnchor}`)
+  writeFileSync(path, patched)
+  return true
+}
+
+/**
  * Warn when upstream changed a file this support replaces, then copy every listed file.
  *
  * A changed file is a warning rather than a failure: building a newer upstream tag is the
@@ -116,5 +150,8 @@ if (process.argv[1] !== undefined && import.meta.filename === resolve(process.ar
   if (result.drifted.length > 0) {
     process.stdout.write(`::warning title=Upstream changed overlaid files::${String(result.drifted.length)} file(s) replaced by this fork also changed upstream; review the replacements against the new upstream source:\n`)
     for (const path of result.drifted) process.stdout.write(`  ${path}\n`)
+  }
+  if (patchLockfile(resolve(values.target))) {
+    process.stdout.write('linux overlay: patched the lockfile with the FreeBSD platform package\n')
   }
 }

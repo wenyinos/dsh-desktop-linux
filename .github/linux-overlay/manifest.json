@@ -126,6 +126,10 @@
       "base": "7d426ad49930f5f0e2a956ab45f10c89be6559ae3d8b0b2600769eb79e9a926a",
       "replaces": true
     },
+    "apps/desktop/scripts/prepare-primary-runtime.ts": {
+      "base": "0a03dad5fa6388d7ffac343de8a4ccc3a1d7b8f9fccb6d0a399bb4e5fd69281c",
+      "replaces": true
+    },
     "apps/desktop/scripts/prepare-runtime.ts": {
       "base": "5bd7d4c8906cb07d34b7075dad71913353b7424303cd198e56449f6bb278f4c4",
       "replaces": true
@@ -148,6 +152,10 @@
     },
     "apps/desktop/tests/desktop-build-paths.spec.ts": {
       "base": "9194dbb84e3af19fc9deef1103c485c10ba0b4115d03de846ad2ea51488e9001",
+      "replaces": true
+    },
+    "apps/desktop/tests/desktop-package-environment.spec.ts": {
+      "base": "26c03a1dbf821d7d429c63435049c9b6d3c3a5b1c0c8ff1ce0aec14113fd08b7",
       "replaces": true
     },
     "apps/desktop/tests/office-engine-presence-fixup.spec.ts": {
@@ -221,6 +229,7 @@
     "apps/desktop/README.i18n.yaml": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
     "apps/desktop/README.md": "Documentation for this fork; not a build input.",
     "apps/desktop/README.zh.md": "Documentation for this fork; not a build input.",
+    "pnpm-lock.yaml": "Not overlaid: the build tree keeps the upstream lockfile, and apply.mjs patches its two FreeBSD importer entries so an upstream dependency change still reaches the build.",
     "site/assets/icon.svg": "Site content for this fork; the build reads none of it.",
     "site/assets/poster.png": "Site content for this fork; the build reads none of it.",
     "site/index.html": "Site content for this fork; the build reads none of it.",
