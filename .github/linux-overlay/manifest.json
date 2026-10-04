@@ -210,6 +210,10 @@
       "base": "a303ffb8994be8e7a874bc887db1abd47a77a6e08872e65f1d65281f43eab91b",
       "replaces": true,
       "merge": true
+    },
+    "patches/node-pty@1.2.0-beta.15.patch": {
+      "base": "b40ae545608897914bd25fb009c97eeac478c34e8a910298ddcb01b746534bb0",
+      "replaces": true
     }
   },
   "excluded": {
