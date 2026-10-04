@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DSH Linux Desktop 打包</title>
-<meta name="description" content="为 DeepSeek Harness 自动构建 Linux 桌面安装包（deb / rpm，x64 与 arm64）。非官方构建。">
-<meta property="og:title" content="DSH Linux Desktop 打包">
-<meta property="og:description" content="为 DeepSeek Harness 自动构建 Linux 桌面安装包（deb / rpm，x64 与 arm64）。非官方构建。">
+<title>DSH Desktop 打包</title>
+<meta name="description" content="为 DeepSeek Harness 自动构建 Linux 与 FreeBSD 桌面安装包（deb / rpm / pkg）。非官方构建。">
+<meta property="og:title" content="DSH Desktop 打包">
+<meta property="og:description" content="为 DeepSeek Harness 自动构建 Linux 与 FreeBSD 桌面安装包（deb / rpm / pkg）。非官方构建。">
 <meta property="og:image" content="assets/poster.png">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/icon.svg">
@@ -105,16 +105,16 @@
   <header>
     <img src="assets/icon.svg" alt="">
     <div>
-      <h1>DSH Linux Desktop 打包</h1>
-      <p>为 DeepSeek Harness 构建 Linux 桌面安装包</p>
+      <h1>DSH Desktop 打包</h1>
+      <p>为 DeepSeek Harness 构建 Linux 与 FreeBSD 桌面安装包</p>
     </div>
   </header>
 
   <div class="badge">非官方构建 · Unofficial build</div>
 
   <p class="lede">
-    上游只提供 macOS 与 Windows 桌面版。本仓库<b>自动跟踪上游版本</b>，构建 Linux 安装包并发布，
-    无需手动同步源码。
+    上游只提供 macOS 与 Windows 桌面版。本仓库<b>自动跟踪上游版本</b>，构建 Linux 与 FreeBSD
+    安装包并发布，无需手动同步源码。
   </p>
 
   <div class="actions">
@@ -127,6 +127,7 @@
     <div class="grid">
       <div class="cell"><div class="k">.deb</div><div class="v">Debian · Ubuntu<br>amd64 · arm64</div></div>
       <div class="cell"><div class="k">.rpm</div><div class="v">Fedora · RHEL · openSUSE<br>x86_64 · aarch64</div></div>
+      <div class="cell"><div class="k">.pkg</div><div class="v">FreeBSD 15<br>amd64</div></div>
     </div>
   </section>
 
@@ -136,9 +137,13 @@
 sudo apt install ./deepseek-harness-&lt;version&gt;-linux-amd64.deb
 
 # Fedora / RHEL / openSUSE
-sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm</pre>
+sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm
+
+# FreeBSD 15
+sudo pkg install ./deepseek-harness-&lt;version&gt;-freebsd-x64.pkg</pre>
     <p class="lede" style="margin-top:18px;font-size:16px;color:#A9B6CC">
       请按 CPU 架构选择文件：<code>x86_64</code> / <code>amd64</code> 对应 x64，<code>aarch64</code> / <code>arm64</code> 对应 arm64。
+      FreeBSD 包的依赖（含 Electron 运行时）由 <code>pkg</code> 自动解析。
     </p>
   </section>
 
@@ -148,7 +153,16 @@ sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm</pre>
       <li>自带 Node 与 pnpm，无需另外安装</li>
       <li>安装 <b>dsh</b> 命令并加入 <code>PATH</code></li>
       <li>桌面图标与菜单项</li>
-      <li>Office 文档转换能力</li>
+      <li>Office 文档转换能力（仅 Linux）</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>FreeBSD 说明 <small>FreeBSD notes</small></h2>
+    <ul class="plain">
+      <li>随 <b>FreeBSD 版 Electron</b> 运行时构建，依赖（含 Electron）由 <code>pkg</code> 从 FreeBSD 仓库自动解析</li>
+      <li>暂不包含 Office 文档转换与图像处理：相关依赖没有 FreeBSD 版本</li>
+      <li>暂不包含 Python 运行时载荷与沙箱功能；自带 Node 与 pnpm、命令行与插件管理仍可正常使用</li>
     </ul>
   </section>
 
@@ -165,7 +179,7 @@ sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm</pre>
     <ul class="plain">
       <li>每日检查上游最新版本，有新版本即自动构建</li>
       <li>始终基于<b>上游源码</b>构建，不改动上游代码</li>
-      <li>双架构构建成功后统一发布；已发布的版本不会重复构建</li>
+      <li>Linux 双架构与 FreeBSD 包构建成功后统一发布；已发布的版本不会重复构建</li>
     </ul>
   </section>
 

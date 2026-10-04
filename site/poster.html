@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>DSH Linux Desktop 打包</title>
+<title>DSH Desktop 打包</title>
 <style>
   /* Rendered to assets/poster.png at 1200x1800. Regenerate after editing this file:
        google-chrome --headless --disable-gpu --hide-scrollbars --no-sandbox \
@@ -54,7 +54,7 @@
   }
   h2 span { font-size: 18px; color: #93A0B8; font-weight: 400; letter-spacing: .4px; }
 
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; margin-top: 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px 22px; margin-top: 24px; }
   .cell {
     background: rgba(251,251,251,.055); border: 1px solid rgba(212,219,233,.16);
     border-radius: 15px; padding: 21px 23px;
@@ -104,8 +104,8 @@
   <header>
     <img src="assets/icon.svg" alt="">
     <div class="titles">
-      <h1>DSH Linux Desktop 打包</h1>
-      <p>为 DeepSeek Harness 构建 Linux 桌面安装包</p>
+      <h1>DSH Desktop 打包</h1>
+      <p>为 DeepSeek Harness 构建 Linux 与 FreeBSD 桌面安装包</p>
     </div>
   </header>
 
@@ -113,7 +113,7 @@
 
   <p class="lede">
     上游只提供 macOS 与 Windows 桌面版。本仓库<b>自动跟踪上游版本</b>，
-    构建 Linux 安装包并发布，无需手动同步源码。
+    构建 Linux 与 FreeBSD 安装包并发布，无需手动同步源码。
   </p>
 
   <section>
@@ -121,6 +121,7 @@
     <div class="grid">
       <div class="cell"><div class="k">.deb</div><div class="v">Debian · Ubuntu<br>amd64 · arm64</div></div>
       <div class="cell"><div class="k">.rpm</div><div class="v">Fedora · RHEL · openSUSE<br>x86_64 · aarch64</div></div>
+      <div class="cell"><div class="k">.pkg</div><div class="v">FreeBSD 15<br>amd64</div></div>
     </div>
   </section>
 
@@ -129,14 +130,15 @@
     <ul class="plain">
       <li>每日检查上游最新版本，有新版本即自动构建</li>
       <li>始终基于<b>上游源码</b>构建，不改动上游代码</li>
-      <li>双架构构建成功后统一发布，已发布的版本不会重复构建</li>
+      <li>Linux 双架构与 FreeBSD 构建成功后统一发布，已发布的版本不会重复构建</li>
     </ul>
   </section>
 
   <section>
     <h2>安装 <span>Install</span></h2>
     <pre>sudo apt install ./deepseek-harness-&lt;version&gt;-linux-amd64.deb
-sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm</pre>
+sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm
+sudo pkg install ./deepseek-harness-&lt;version&gt;-freebsd-x64.pkg</pre>
   </section>
 
   <section>
@@ -148,7 +150,7 @@ sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm</pre>
       </ul>
       <ul class="list yes">
         <li>桌面图标与菜单项</li>
-        <li>Office 文档转换能力</li>
+        <li>Office 文档转换能力（仅 Linux）</li>
       </ul>
     </div>
   </section>
@@ -161,6 +163,7 @@ sudo dnf install ./deepseek-harness-&lt;version&gt;-linux-x86_64.rpm</pre>
       </ul>
       <ul class="list no">
         <li>代码签名，首次安装可能提示来源未知</li>
+        <li>FreeBSD 版暂不含 Office 转换与图像处理</li>
       </ul>
     </div>
   </section>
