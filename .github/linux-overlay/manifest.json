@@ -234,6 +234,14 @@
       "base": "bd7df63c02ffdb0725080dc3f38530606cd4bb80d59129f99981110a23082aa8",
       "replaces": true
     },
+    "native/system/test/fixtures/flock-import.js": {
+      "base": "e090c7dc456c4f02555a38148afdafd56b8eb5bd865b80d6b1a96fbb59dfff94",
+      "replaces": true
+    },
+    "native/system/test/flock.test.js": {
+      "base": "63d2aa72cd53993953bf2ce94962e78cae9d2192003ebff9a9625aadc7428b4d",
+      "replaces": true
+    },
     "native/system/test/package-matrix.test.js": {
       "base": "95efedce6f7d8223cf7b004079c51893249fedacc54897f2db7794d2a27599a0",
       "replaces": true
