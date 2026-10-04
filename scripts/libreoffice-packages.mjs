@@ -22,6 +22,9 @@ export function selectOfficeEngine(manifest, target) {
  * @returns {Promise<string[]>} Absolute package directories; rejects missing dependencies and paths outside staging.
  */
 export async function officePackageDirectories(staging, target) {
+  // The kit declares no engine for FreeBSD and rejects the host when an Office feature runs, so
+  // that platform collects no engine directories and the runtime ships none.
+  if (target.platform === 'freebsd') return []
   const entry = join(staging, 'node_modules', '@deepseek-ai', 'libreoffice-kit')
   const manifest = JSON.parse(await readFile(join(entry, 'package.json'), 'utf8'))
   const engineName = `@deepseek-ai/libreoffice-kit-${selectOfficeEngine(manifest, target)}`

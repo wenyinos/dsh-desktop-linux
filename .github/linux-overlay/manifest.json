@@ -250,6 +250,10 @@
     "patches/node-pty@1.2.0-beta.15.patch": {
       "base": "b40ae545608897914bd25fb009c97eeac478c34e8a910298ddcb01b746534bb0",
       "replaces": true
+    },
+    "scripts/libreoffice-packages.mjs": {
+      "base": "dee06b3337deec553858d9edbbbef09bbca88dadefead0903cbd42162acfe445",
+      "replaces": true
     }
   },
   "excluded": {
