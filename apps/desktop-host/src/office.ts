@@ -30,9 +30,12 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const archive = runtimeArchivePath(config.runtimeDir) === undefined ? undefined : dirname(realpathSync(config.runtimeDir))
   const manifest = fileURLToPath(import.meta.resolve('@deepseek-ai/libreoffice-kit/package.json'))
   const packageRoot = dirname(archive === undefined ? manifest : join(`${archive}.unpacked`, relative(archive, manifest)))
+  // The kit declares no engine for FreeBSD, and the packaged runtime unpacks only an engine's
+  // closure, so the CLI entry is absent there; the skill reports LibreOffice Kit disabled
+  // instead of failing on a missing file that could never convert anything.
   await ctx.plugin(officeSkills, {
     assetRoot: join(dirname(config.source), 'office-skills'),
     node: join(config.source, 'dependencies', 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node'),
-    cli: join(packageRoot, 'lib', 'cli.js'),
+    cli: process.platform === 'freebsd' ? false : join(packageRoot, 'lib', 'cli.js'),
   })
 }

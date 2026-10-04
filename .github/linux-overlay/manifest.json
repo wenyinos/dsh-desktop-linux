@@ -5,6 +5,10 @@
       "base": "1be663118b2aa066404d5a3041a7e76b714cf09b07461fa2660f31404263729f",
       "replaces": true
     },
+    "apps/desktop-host/src/office.ts": {
+      "base": "33c85997b69dacd6a9e5410d3c101039dd0e9a4cc8f63f9bbdfee1242390a668",
+      "replaces": true
+    },
     "apps/desktop/.env.freebsd.example": {
       "base": null,
       "replaces": false
