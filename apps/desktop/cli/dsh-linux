@@ -13,4 +13,13 @@ while [ -L "$launcher" ]; do
   esac
 done
 resources=$(CDPATH= cd -- "$(dirname -- "$launcher")/../../.." && pwd -P)
-ELECTRON_RUN_AS_NODE=1 exec "$resources/../deepseek-harness" --expose-internals "$resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js" "$@"
+application="$resources/../deepseek-harness"
+cli="$resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js"
+# The CLI runs its bundled package manager as its own executable, and the FreeBSD Electron build
+# crashes when it spawns itself as Node. The Node stub starts the CLI there instead, and the hook
+# it loads reroutes those spawns; other platforms run the application directly.
+stub="$resources/runtime/bin/node"
+if [ "$(uname -s)" = "FreeBSD" ] && [ -x "$stub" ]; then
+  DSH_DESKTOP_NODE_EXECUTABLE="$application" exec "$stub" "$cli" "$@"
+fi
+ELECTRON_RUN_AS_NODE=1 exec "$application" --expose-internals "$cli" "$@"

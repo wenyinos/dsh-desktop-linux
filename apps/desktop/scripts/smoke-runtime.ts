@@ -59,9 +59,16 @@ export function apply(ctx) {
     writeFileSync(join(installedPlugin, 'bundle.yml'), `- insert:\n    - id: ${installedName}\n      name: ${installedName}\n      inject: [webServer]\n`)
     appendFileSync(join(profile, 'pnpm-workspace.yaml'), 'offline: true\nupdateNotifier: false\n')
     const cli = join(root, 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js')
-    const runCli = (args: string[]) => promisify(execFile)(node,
+    // The bundled package manager runs as `process.execPath`, so this CLI spawns the Electron
+    // executable as Node; on FreeBSD that self-spawn is the shape its child-process patch crashes
+    // on. The Node stub starts the CLI instead, and the hook it loads reroutes those spawns.
+    const stub = join(resourcesRuntime, 'bin', 'node')
+    const cliNode = process.platform === 'freebsd' && existsSync(stub) ? stub : node
+    const runCli = (args: string[]) => promisify(execFile)(cliNode,
       ['--expose-internals', cli, 'plugin', '--profile', 'desktop', ...args],
-      { cwd: home, env: { ...hostEnvironment, ELECTRON_RUN_AS_NODE: '1' }, timeout: 120_000, windowsHide: true })
+      { cwd: home, timeout: 120_000, windowsHide: true,
+        env: { ...hostEnvironment, ELECTRON_RUN_AS_NODE: '1',
+          ...(cliNode === node ? {} : { DSH_DESKTOP_NODE_EXECUTABLE: node }) } })
     await runCli(['add', `file:${installedPlugin}`, '--offline', '--ignore-scripts'])
     const installedEntry = join(profile, 'node_modules', installedName, 'index.js')
     if (readFileSync(installedEntry, 'utf8') !== readFileSync(join(installedPlugin, 'index.js'), 'utf8')) {
