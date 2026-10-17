@@ -1,7 +1,7 @@
 /** Prepare Desktop resources and publish their versions after every preparation stage succeeds. */
 
 import { execFileSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -92,6 +92,19 @@ async function prepareElectron({ platform, arch }: DesktopTarget): Promise<strin
   }).trim()
 }
 
+/**
+ * Read the version a staged package manifest declares.
+ * @param manifestPath - Path of the staged package's manifest.
+ * @returns The declared version.
+ */
+function stagedPackageVersion(manifestPath: string): string {
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { version?: unknown }
+  if (typeof manifest.version !== 'string' || manifest.version === '') {
+    throw new Error(`desktop runtime: ${manifestPath} declares no version`)
+  }
+  return manifest.version
+}
+
 function prepareCli({ platform, arch }: DesktopTarget): void {
   cpSync(join(import.meta.dirname, 'node-bin'), join(RUNTIME_ROOT, 'bin'), { recursive: true })
   chmodSync(join(RUNTIME_ROOT, 'bin', 'node'), 0o755)
@@ -115,7 +128,11 @@ async function main(): Promise<void> {
   const nodeVersion = await prepareElectron(target)
   await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:primary-runtime',
     () => preparePrimaryRuntime({ deferSmoke: values['defer-primary-runtime-smoke'] }))
-  const { pnpm } = await readPrimaryRuntime(join(RUNTIME_ROOT, 'primary-runtime'))
+  // The FreeBSD payload carries no locked manifest to read, because no complete locked payload
+  // exists there; the pnpm copy that payload stages declares its own version.
+  const { pnpm } = target.platform === 'freebsd'
+    ? { pnpm: stagedPackageVersion(join(RUNTIME_ROOT, 'primary-runtime', 'dependencies', 'pnpm', 'package.json')) }
+    : await readPrimaryRuntime(join(RUNTIME_ROOT, 'primary-runtime'))
   if (pnpm === undefined) throw new Error('desktop runtime: primary-runtime manifest has no pnpm version')
   await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:cli', async () => { prepareCli(target) })
   // The deb and rpm install scripts put the CLI on PATH; they are written before electron-builder
