@@ -150,6 +150,10 @@
       "base": null,
       "replaces": false
     },
+    "apps/desktop/scripts/retain-desktop-ci.ts": {
+      "base": "043fb53e182d9f9b895f815b91d930d9e6f30ddde383658b39eb92bc1adf24f0",
+      "replaces": true
+    },
     "apps/desktop/scripts/smoke-packaged-runtime.ts": {
       "base": "c9945f11b3340b33d264c65b5c11a95be55d7c6a1a82ce7de2cf083650d99a26",
       "replaces": true
