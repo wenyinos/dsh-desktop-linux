@@ -190,6 +190,10 @@
       "base": "17e4064a8a21fcce62e4d6e429465b66cda0dc511385a4e8e83764eb3d90c5b4",
       "replaces": true
     },
+    "apps/desktop/tests/fixtures/pnpm-smoke.mjs": {
+      "base": "1de01650fc6d17c14cf7d28a1318e944ba195921153b59b3f16a150ba87d9f6f",
+      "replaces": true
+    },
     "apps/desktop/tests/fixtures/runtime-payload-smoke.mjs": {
       "base": "08da8365729a5f126da5cc672547622fe799c160ee0b6f3ba5b0b4f4d1dc327e",
       "replaces": true

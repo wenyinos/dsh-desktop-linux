@@ -18,8 +18,12 @@ export async function checkPnpm(resourcesRuntime) {
   const primary = join(resourcesRuntime, 'primary-runtime')
   const pnpm = join(primary, 'dependencies', 'pnpm', 'bin', 'pnpm.mjs')
   const versions = JSON.parse(readFileSync(join(resourcesRuntime, 'versions.json'), 'utf8'))
-  const manifest = JSON.parse(readFileSync(join(primary, 'runtime.json'), 'utf8'))
-  assert.equal(versions.pnpm, manifest.pnpm)
+  // A FreeBSD payload carries no locked runtime manifest, because no complete locked payload
+  // exists there; the pnpm copy it staged declares the version the run recorded instead.
+  const recorded = existsSync(join(primary, 'runtime.json'))
+    ? JSON.parse(readFileSync(join(primary, 'runtime.json'), 'utf8')).pnpm
+    : JSON.parse(readFileSync(join(primary, 'dependencies', 'pnpm', 'package.json'), 'utf8')).version
+  assert.equal(versions.pnpm, recorded)
   const scratch = mkdtempSync(join(tmpdir(), 'desktop-pnpm-smoke-'))
   try {
     mkdirSync(join(scratch, 'dependency'))
