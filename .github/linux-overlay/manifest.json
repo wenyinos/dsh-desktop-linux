@@ -1,5 +1,5 @@
 {
-  "authoredAgainst": "639ed015397290b3745d163aafe02ffee4aa3f84",
+  "authoredAgainst": "687f282e8625c6b8d11ff58211a90524be2e4317",
   "files": {
     ".gitignore": {
       "base": "69aa6d10d236e1e188509ba9d6f9b1170c6edba9b3a1dd1b9a4a1b8a54dd3dfe",
@@ -285,10 +285,9 @@
     "apps/desktop/README.i18n.yaml": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
     "apps/desktop/README.md": "Documentation for this fork; not a build input.",
     "apps/desktop/README.zh.md": "Documentation for this fork; not a build input.",
-    "apps/desktop/scripts/macos-signature-cache-directory.mjs": "Upstream module this repository keeps only so its own tooling resolves the overlaid scripts; the build tree takes upstream's copy, so the overlay never replaces it.",
-    "apps/desktop/scripts/prepare-runtime-patches.ts": "Upstream module this repository keeps only so its own tooling resolves the overlaid scripts; the build tree takes upstream's copy, so the overlay never replaces it.",
-    "apps/desktop/scripts/runtime-patch-policy.ts": "Upstream module this repository keeps only so its own tooling resolves the overlaid scripts; the build tree takes upstream's copy, so the overlay never replaces it.",
-    "apps/desktop/tests/fixtures/pnpm-smoke.mjs": "Upstream module this repository keeps only so its own tooling resolves the overlaid scripts; the build tree takes upstream's copy, so the overlay never replaces it.",
+    "apps/desktop/packaging/README.i18n.yaml": "Documentation for this fork; the build reads none of it, and it is never copied onto the upstream tree.",
+    "apps/desktop/packaging/README.md": "Documentation for this fork; the build reads none of it, and it is never copied onto the upstream tree.",
+    "apps/desktop/packaging/README.zh.md": "Documentation for this fork; the build reads none of it, and it is never copied onto the upstream tree.",
     "docs/freebsd-packaging-notes.i18n.yaml": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
     "docs/freebsd-packaging-notes.md": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
     "docs/freebsd-packaging-notes.zh.md": "Documentation for this fork; the build reads none of it, and the build tree keeps the upstream text.",
