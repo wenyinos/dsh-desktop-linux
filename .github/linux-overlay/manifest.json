@@ -21,6 +21,10 @@
       "base": null,
       "replaces": false
     },
+    "apps/desktop/electron-builder.config.d.mts": {
+      "base": "d508af45daa24f2603cd19220bf5a0792a95dbb63a7ec3443fd873553a92a2eb",
+      "replaces": true
+    },
     "apps/desktop/package.json": {
       "base": "913095d3048ad424335acccf8e3193bb9523961604709062a430f57c4ac22479",
       "replaces": true,
@@ -174,8 +178,20 @@
       "base": "6b9d3e558f526b7832020fb43d6682a07a68bf2d5657f26951f50a4f3eabfa28",
       "replaces": true
     },
+    "apps/desktop/src/main.ts": {
+      "base": "e345eda0425f2df795d20413bb87bb9a3ddc46e71ceb1cec0755ad1cca3fb847",
+      "replaces": true
+    },
     "apps/desktop/src/project-manager.ts": {
       "base": "2ad0aacba5377e82c1ed2bd70f52003ffdf91fa0e287dd3d51cfd896f2249748",
+      "replaces": true
+    },
+    "apps/desktop/src/tray-icon-path.ts": {
+      "base": null,
+      "replaces": false
+    },
+    "apps/desktop/src/tray.ts": {
+      "base": "b638b310c86775db9a3c19b9db89b2fe097ae7dcf813497edfe0d612a5027a7b",
       "replaces": true
     },
     "apps/desktop/tests/desktop-auto-update-environment.spec.ts": {
@@ -198,6 +214,10 @@
       "base": "08da8365729a5f126da5cc672547622fe799c160ee0b6f3ba5b0b4f4d1dc327e",
       "replaces": true
     },
+    "apps/desktop/tests/installer-packaging.spec.ts": {
+      "base": "0d0574102b6e1c156276eac0c29673925cac2f18cb8a34d7d5a6201d7b4ca39b",
+      "replaces": true
+    },
     "apps/desktop/tests/office-engine-presence-fixup.spec.ts": {
       "base": null,
       "replaces": false
@@ -205,6 +225,10 @@
     "apps/desktop/tests/package-target.spec.ts": {
       "base": "281af4cf16bb29f9cbb5ebc0df989d213ddebb402592a30e8743451c94e55ef6",
       "replaces": true
+    },
+    "apps/desktop/tests/tray-icon-path.spec.ts": {
+      "base": null,
+      "replaces": false
     },
     "native/system/docs/support-matrix.md": {
       "base": "0c63abb34ba364ea613a67ec6ea525a8c12f36086ec3910643c3afbe08c05d75",

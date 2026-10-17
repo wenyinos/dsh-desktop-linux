@@ -60,6 +60,7 @@ import { installDesktopShortcuts } from './keyboard.ts'
 import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
+import { desktopTrayIconPath } from './tray-icon-path.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
 
 let focusPrimaryWindow = (): void => {}
@@ -988,8 +989,14 @@ async function main(): Promise<void> {
     tray?.relabel()
   }
   refreshApplicationMenu()
-  const trayIconPath = development ? join(app.getAppPath(), 'resources', 'tray-windows.ico') : join(process.resourcesPath, 'tray.ico')
-  if (process.platform === 'win32') {
+  const windowsTrayIconPath = development ? join(app.getAppPath(), 'resources', 'tray-windows.ico') : join(process.resourcesPath, 'tray.ico')
+  // Linux and FreeBSD trays take the launcher bitmap packaged beside the application resources,
+  // which is the same artwork the desktop entry installs.
+  const desktopTrayIcon = development
+    ? join(app.getAppPath(), 'resources', 'linux-icons', '32x32.png')
+    : join(process.resourcesPath, 'tray.png')
+  const trayIconPath = desktopTrayIconPath(process.platform, windowsTrayIconPath, desktopTrayIcon)
+  if (trayIconPath !== undefined) {
     // The tray is the way back to a hidden window; without it, relaunching the application still focuses it.
     try {
       tray = new DesktopTray({ iconPath: trayIconPath, locale: currentDesktopLocale,
@@ -1010,7 +1017,7 @@ async function main(): Promise<void> {
     focus: () => { if (process.platform === 'darwin') app.focus({ steal: true }) },
     // The task dialog draws its main icon at the system icon size; the multi-size ICO yields that
     // size directly, where the 1024 px PNG would be scaled down by GDI.
-    ...(process.platform === 'win32' ? { icon: nativeImage.createFromPath(trayIconPath) } : {}),
+    ...(process.platform === 'win32' ? { icon: nativeImage.createFromPath(windowsTrayIconPath) } : {}),
   })
 
   if (process.platform === 'win32') {

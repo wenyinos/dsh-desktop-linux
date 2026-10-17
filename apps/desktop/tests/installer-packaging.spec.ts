@@ -64,6 +64,16 @@ describe('installer preparation preserves application dependencies', () => {
     }
   })
 
+  it('ships the launcher bitmap the Linux and FreeBSD trays show', async () => {
+    const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
+    const config = createElectronBuilderConfig({ DSH_DESKTOP_APP_ID: 'com.example.installer' }, 'linux', 'x64')
+    const trayIcon = config.extraResources.find(resource => resource.to === 'tray.png')
+    expect(trayIcon).toBeDefined()
+    expect(readFileSync(trayIcon!.from)).toEqual(readFileSync(new URL('../resources/linux-icons/32x32.png', import.meta.url)))
+    // The multi-size ICO is Windows-only; its task dialog draws it too.
+    expect(config.extraResources.find(resource => resource.to === 'tray.ico')).toBeUndefined()
+  })
+
   it('names unsigned Windows artifacts so they cannot pass for release builds', async () => {
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
     const config = createElectronBuilderConfig({

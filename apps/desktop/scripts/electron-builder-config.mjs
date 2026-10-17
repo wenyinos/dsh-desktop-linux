@@ -199,6 +199,8 @@ export function createElectronBuilderConfig(
       { from: fileURLToPath(new URL(packagesLinux ? '../resources/icon.png' : '../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
       // Windows tray bitmaps; macOS keeps the Dock and ships no menu bar icon.
       ...(packagesWindows ? [{ from: fileURLToPath(new URL('../resources/tray-windows.ico', import.meta.url)), to: 'tray.ico' }] : []),
+      // Linux and FreeBSD trays show the launcher bitmap the desktop entry installs, at tray size.
+      ...(packagesLinux ? [{ from: fileURLToPath(new URL('../resources/linux-icons/32x32.png', import.meta.url)), to: 'tray.png' }] : []),
     ],
     mac: {
       icon: fileURLToPath(new URL('../resources/icon-macos.png', import.meta.url)),
