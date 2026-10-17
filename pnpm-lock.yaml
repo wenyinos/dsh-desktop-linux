@@ -16,7 +16,7 @@ patchedDependencies:
   '@fortune-sheet/react@1.0.4': 2932e52e79afcd4ced08cfa123b5eded786c85043da32f622f3e80af6fc96c37
   '@yao-pkg/pkg@6.21.0': 75891fc22b277c145cafeab83e41baf4a70f5b8fe6dc0801c6a0b922d7ee88c7
   exceljs@4.4.0: c1bf8ac8f319dab382f08e3a669b715e691d46c703ac5a4163eb383fbedd1d48
-  node-pty@1.2.0-beta.15: 59a370362401b90c1b30e7baa7cf8f61a55d5b5ad39578b70afea1a4b08a1b11
+  node-pty@1.2.0-beta.15: b7e652b79c0a876dcb2bdb4d8b0a35eca765587908f4da74d7e55b3b6d505d9a
 
 importers:
 
@@ -88,6 +88,12 @@ importers:
       '@types/node':
         specifier: ^22.20.0
         version: 22.20.0
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ~18.3.0
+        version: 18.3.7(@types/react@18.3.31)
       '@types/spdx-expression-parse':
         specifier: ^4.0.0
         version: 4.0.0
@@ -636,12 +642,6 @@ importers:
       '@types/node':
         specifier: ^22.20.0
         version: 22.20.0
-      '@types/react':
-        specifier: ~18.3.1
-        version: 18.3.31
-      '@types/react-dom':
-        specifier: ~18.3.0
-        version: 18.3.7(@types/react@18.3.31)
       '@types/semver':
         specifier: ^7.8.0
         version: 7.8.0
@@ -12878,7 +12878,7 @@ importers:
         version: 3.1.1
       node-pty:
         specifier: 1.2.0-beta.15
-        version: 1.2.0-beta.15(patch_hash=59a370362401b90c1b30e7baa7cf8f61a55d5b5ad39578b70afea1a4b08a1b11)
+        version: 1.2.0-beta.15(patch_hash=b7e652b79c0a876dcb2bdb4d8b0a35eca765587908f4da74d7e55b3b6d505d9a)
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~
@@ -27969,7 +27969,7 @@ snapshots:
 
   node-int64@0.4.0: {}
 
-  node-pty@1.2.0-beta.15(patch_hash=59a370362401b90c1b30e7baa7cf8f61a55d5b5ad39578b70afea1a4b08a1b11):
+  node-pty@1.2.0-beta.15(patch_hash=b7e652b79c0a876dcb2bdb4d8b0a35eca765587908f4da74d7e55b3b6d505d9a):
     dependencies:
       node-addon-api: 7.1.1
 

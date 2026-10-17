@@ -2,7 +2,7 @@
  * Suggest the next build version for a product version, so the sequence number
  * is derived rather than remembered.
  *
- * `apps/desktop/README.md` gives the form as `<product version>.<date>.<index>`
+ * `apps/desktop/packaging/README.md#release-versions` gives the form as `<product version>.<date>.<index>`
  * for a prerelease base and `<product version>-test.<date>.<index>` for a
  * stable one. What makes an index correct is which ones are taken, and that is
  * recorded where the builds went: the update bucket for an uploaded build, the
@@ -31,9 +31,9 @@ const LISTING_DEADLINE_MS = 8_000
 /** Objects one listing page may return. */
 const LISTING_PAGE_SIZE = 1000
 
-/** Artifact name electron-builder writes for one build on any supported platform; unsigned Windows builds add a suffix. */
+/** Artifact name electron-builder writes for one build on any supported platform; unsigned and unnotarized builds add a suffix. */
 const ARTIFACT = new RegExp('(?:^|/)deepseek-harness-(?<version>.+)-'
-  + '(?:mac|win|linux)-(?:arm64|x64|amd64|x86_64|aarch64)(?:-unsigned)?'
+  + '(?:mac|win|linux)-(?:arm64|x64|amd64|x86_64|aarch64)(?:-unsigned|-unnotarized)?'
   + '\\.(?:exe|dmg|zip|deb|rpm)$', 'u')
 
 /** Inputs that decide which versions are already taken. */

@@ -1,14 +1,15 @@
-/** Prepare the target Electron distribution and pinned pnpm CLI. */
+/** Prepare Desktop resources and publish their versions after every preparation stage succeeds. */
 
-import { packagingStep } from './packaging-step.mjs'
 import { execFileSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { downloadArtifact } from '@electron/get'
 import extractZip from 'extract-zip'
-import { resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths, desktopTargetPlatform } from './desktop-build-paths.mjs'
+import { readPrimaryRuntime } from '../../../packages/skill/tool-workspace-dependencies/src/index.ts'
+import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
+import { packagingStep } from './packaging-step.mjs'
 import { preparePrimaryRuntime } from './prepare-primary-runtime.ts'
 import { prepareDesktopCli } from './prepare-cli.ts'
 import { prepareCommandLink } from './prepare-command-link.ts'
@@ -16,6 +17,8 @@ import { prepareLinuxInstallerScripts } from './linux-installer-scripts.mjs'
 
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
 const RUNTIME_ROOT = BUILD_PATHS.runtime
+
+type DesktopTarget = ReturnType<typeof desktopTargetPlatform>
 
 /** Build-only members of the FreeBSD Electron package that the application never loads. */
 const FREEBSD_ELECTRON_EXCLUSIONS = new Set([
@@ -27,7 +30,7 @@ const FREEBSD_ELECTRON_EXCLUSIONS = new Set([
  * @param platform - Target platform of the prepared distribution.
  * @returns Segments relative to the extraction directory.
  */
-function electronExecutableSegments(platform: 'darwin' | 'win32' | 'linux' | 'freebsd'): readonly string[] {
+function electronExecutableSegments(platform: DesktopTarget['platform']): readonly string[] {
   if (platform === 'darwin') return ['Electron.app', 'Contents', 'MacOS', 'Electron']
   return [platform === 'win32' ? 'electron.exe' : 'electron']
 }
@@ -66,13 +69,12 @@ function prepareFreebsdElectron(): void {
 }
 
 /**
- * Prepare the target's Electron distribution across the archive download or the FreeBSD system
- * package, then record the Node version the bundled distribution reports.
- * @param platform - Target platform of the prepared distribution.
- * @param arch - Target architecture of the prepared distribution.
+ * Prepare the target Electron distribution from the downloaded archive or the FreeBSD system
+ * package, and return the Node version it embeds.
+ * @param target - Platform and architecture of the prepared payload.
  * @returns The Node version the prepared Electron reports.
  */
-async function prepareElectron(platform: 'darwin' | 'win32' | 'linux' | 'freebsd', arch: string): Promise<string> {
+async function prepareElectron({ platform, arch }: DesktopTarget): Promise<string> {
   if (platform === 'freebsd') {
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'install:freebsd-electron', async () => prepareFreebsdElectron())
   }
@@ -90,50 +92,45 @@ async function prepareElectron(platform: 'darwin' | 'win32' | 'linux' | 'freebsd
   }).trim()
 }
 
-function preparePnpm(): string {
-  const require = createRequire(import.meta.url)
-  const manifestPath = require.resolve('pnpm')
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { version?: unknown }
-  if (typeof manifest.version !== 'string') throw new Error('desktop runtime: pnpm manifest has no version')
-  const packageDir = dirname(manifestPath)
-  const destination = join(RUNTIME_ROOT, 'pnpm')
-  rmSync(destination, { recursive: true, force: true })
-  cpSync(packageDir, destination, { recursive: true })
-  return manifest.version
+function prepareCli({ platform, arch }: DesktopTarget): void {
+  cpSync(join(import.meta.dirname, 'node-bin'), join(RUNTIME_ROOT, 'bin'), { recursive: true })
+  chmodSync(join(RUNTIME_ROOT, 'bin', 'node'), 0o755)
+  const cli = join(RUNTIME_ROOT, 'cli')
+  prepareDesktopCli(cli, platform)
+  if (platform === 'darwin') {
+    const minimumVersion = execFileSync('/usr/libexec/PlistBuddy', [
+      '-c', 'Print LSMinimumSystemVersion', join(BUILD_PATHS.electron, 'Electron.app', 'Contents', 'Info.plist'),
+    ], { encoding: 'utf8' }).trim()
+    prepareCommandLink(cli, arch, minimumVersion)
+  }
+  cpSync(join(import.meta.dirname, '..', 'lib', 'command-manager-entry.js'), join(cli, 'command-manager.js'))
+  cpSync(join(import.meta.dirname, 'command-path.ps1'), join(cli, 'command-path.ps1'))
 }
 
 async function main(): Promise<void> {
   const { values } = parseArgs({ options: { 'defer-primary-runtime-smoke': { type: 'boolean', default: false } } })
-  const target = resolveDesktopBuildTarget()
-  const { platform, arch } = desktopTargetPlatform(target)
-  const nodeVersion = await prepareElectron(platform, arch)
-  const macosMinimumVersion = platform === 'darwin' ? execFileSync('/usr/libexec/PlistBuddy',
-    ['-c', 'Print LSMinimumSystemVersion', join(BUILD_PATHS.electron, 'Electron.app', 'Contents', 'Info.plist')], { encoding: 'utf8' }).trim() : undefined
+  const target = desktopTargetPlatform(resolveDesktopBuildTarget())
   rmSync(RUNTIME_ROOT, { recursive: true, force: true })
   mkdirSync(RUNTIME_ROOT, { recursive: true })
-  const pnpmVersion = preparePnpm()
-  cpSync(join(import.meta.dirname, 'node-bin'), join(RUNTIME_ROOT, 'bin'), { recursive: true })
-  chmodSync(join(RUNTIME_ROOT, 'bin', 'node'), 0o755)
-  writeFileSync(join(RUNTIME_ROOT, 'versions.json'), `${JSON.stringify({
-    schemaVersion: 1,
-    node: nodeVersion,
-    pnpm: pnpmVersion,
-  }, undefined, 2)}\n`)
-  await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:cli',
-    async () => prepareDesktopCli(join(RUNTIME_ROOT, 'cli'), platform))
-  if (macosMinimumVersion !== undefined) prepareCommandLink(join(RUNTIME_ROOT, 'cli'), arch, macosMinimumVersion)
-  cpSync(join(import.meta.dirname, '..', 'lib', 'command-manager-entry.js'), join(RUNTIME_ROOT, 'cli', 'command-manager.js'))
-  cpSync(join(import.meta.dirname, 'command-path.ps1'), join(RUNTIME_ROOT, 'cli', 'command-path.ps1'))
+  const nodeVersion = await prepareElectron(target)
+  await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:primary-runtime',
+    () => preparePrimaryRuntime({ deferSmoke: values['defer-primary-runtime-smoke'] }))
+  const { pnpm } = await readPrimaryRuntime(join(RUNTIME_ROOT, 'primary-runtime'))
+  if (pnpm === undefined) throw new Error('desktop runtime: primary-runtime manifest has no pnpm version')
+  await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:cli', async () => { prepareCli(target) })
   // The deb and rpm install scripts put the CLI on PATH; they are written before electron-builder
   // reads its configuration, which runs after this step. A FreeBSD package places the command itself.
-  if (platform === 'linux') {
+  if (target.platform === 'linux') {
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:linux-installer-scripts', async () => {
       const scripts = prepareLinuxInstallerScripts(BUILD_PATHS.root)
       process.stdout.write(`desktop runtime: Linux install scripts written to ${scripts.afterInstall} and ${scripts.afterRemove}\n`)
     })
   }
-  await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:primary-runtime',
-    () => preparePrimaryRuntime({ deferSmoke: values['defer-primary-runtime-smoke'] }))
+  writeFileSync(join(RUNTIME_ROOT, 'versions.json'), `${JSON.stringify({
+    schemaVersion: 1,
+    node: nodeVersion,
+    pnpm,
+  }, undefined, 2)}\n`)
 }
 
 await main()
