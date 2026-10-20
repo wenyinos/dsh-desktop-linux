@@ -3,10 +3,14 @@
  *
  * `@img/sharp-libvips-linux-*` carries its own glib 2.90, and `@img/sharp-linux-*.node` imports
  * seven glib functions from it. Inside an Electron process the system libgobject is already in the
- * global scope, so those imports bind to the distribution's glib (2.88 on Fedora 44) and finalize
- * GObjects the bundled glib created, which raises SIGSEGV on the first image attachment. Renaming
- * the seven symbols on both binaries keeps the pair on the bundled glib regardless of what the
- * Electron executable has loaded.
+ * global scope, so those imports bind to the distribution's glib and finalize GObjects the bundled
+ * glib created, which raises SIGSEGV on the first image attachment. Renaming the seven symbols on
+ * both binaries keeps the pair on the bundled glib whatever the Electron executable has loaded.
+ *
+ * The rename runs through patchelf 0.19.2 or newer: 0.18.0 allocates the program and section
+ * header tables over the data it rewrites, so its output crashes the loader, and only the Fedora
+ * build of 0.18.0 carries the fix. The Linux packaging workflow downloads the upstream 0.19.2
+ * release instead of using the distribution package.
  */
 
 import { execFileSync } from 'node:child_process'
@@ -28,38 +32,41 @@ const GLIB_SYMBOLS = [
 /** Prefix of the renamed symbols, so an already patched tree is recognisable without binutils. */
 const SYMBOL_PREFIX = 'vipsglib_'
 
+/** The oldest patchelf release whose rewritten image the loader accepts. */
+const MINIMUM_PATCHELF_MINOR = 19
+
 /**
  * A native Linux sharp prebuild below an `@img` directory. The prepared tree keeps two copies of
  * every `@img` package: the hoisted `node_modules/@img` one and pnpm's `.pnpm/…/@img` one that
- * `sharp` actually resolves from, so the rename must cover both.
+ * `sharp` can resolve from, so the rename must cover both.
  */
 const NATIVE_BINARY = /[/\\]@img[/\\]sharp(?:-libvips)?-linux-(?:arm64|x64)[/\\]lib[/\\](?:[^/\\]+\.node|libvips-cpp\.so[^/\\]*)$/u
 
 /**
- * Require a patchelf release that can rename dynamic symbols.
- * @returns {string} The patchelf version string.
+ * Require a patchelf release that keeps the rewritten image loadable.
+ * @returns The patchelf version string.
  */
 function requirePatchelf(): string {
   let output
   try {
     output = execFileSync('patchelf', ['--version'], { encoding: 'utf8' }).trim()
   } catch {
-    throw new Error('desktop runtime: patchelf is required to isolate sharp\'s bundled glib on Linux')
+    throw new Error('desktop runtime: patchelf 0.19.2 or newer is required to isolate sharp\'s bundled glib on Linux')
   }
   const version = output.replace(/^patchelf\s+/u, '')
   const [major = 0, minor = 0] = version.split('.').map(part => Number.parseInt(part, 10) || 0)
-  if (major === 0 && minor < 18) {
-    throw new Error(`desktop runtime: patchelf ${version} cannot rename dynamic symbols; 0.18 or newer is required`)
+  if (major === 0 && minor < MINIMUM_PATCHELF_MINOR) {
+    throw new Error(`desktop runtime: patchelf ${version} rewrites sharp's prebuild into an unusable image; 0.19.2 or newer is required`)
   }
   return version
 }
 
 /**
  * Rename the bundled glib symbols of one binary.
- * @param {string} binary - Absolute path of the addon or libvips shared object.
- * @param {string} symbolMap - File listing `old new` symbol pairs for patchelf.
- * @param {string} marker - Symbol name that must appear once the rename succeeded.
- * @returns {boolean} Whether the binary changed.
+ * @param binary - Absolute path of the addon or libvips shared object.
+ * @param symbolMap - File listing `old new` symbol pairs for patchelf.
+ * @param marker - Symbol name that must appear once the rename succeeded.
+ * @returns Whether the binary changed.
  */
 function renameSymbols(binary: string, symbolMap: string, marker: string): boolean {
   if (readFileSync(binary).includes(marker)) return false
@@ -72,8 +79,8 @@ function renameSymbols(binary: string, symbolMap: string, marker: string): boole
 
 /**
  * Isolate sharp's bundled glib in a prepared desktop runtime tree.
- * @param {string} dshRoot - Root of the prepared `dsh` package tree.
- * @returns {string[]} Absolute paths of the binaries that were patched.
+ * @param dshRoot - Root of the prepared `dsh` package tree.
+ * @returns Absolute paths of the binaries that were patched.
  */
 export function patchSharpGlibSymbols(dshRoot: string): string[] {
   const nodeModules = join(dshRoot, 'node_modules')

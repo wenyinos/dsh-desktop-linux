@@ -154,12 +154,28 @@ jobs:
       # The prepared payload compiles the native system add-ons against the Node development
       # headers and builds the deb and rpm with rpmbuild, xz, and dpkg-deb. The static Landlock
       # launcher is linked with musl, and the flock addon builds both glibc and musl variants.
-      # patchelf renames sharp's bundled glib symbols so Electron's GTK glib cannot claim them.
       - name: Install the packaging toolchain
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends \
-            build-essential musl-tools rpm xz-utils dpkg-dev fakeroot patchelf
+            build-essential musl-tools rpm xz-utils dpkg-dev fakeroot
+
+      # patchelf renames sharp's bundled glib symbols so Electron's GTK glib cannot claim them.
+      # 0.18.0 writes the program and section header tables over the data it rewrites and the
+      # loader then crashes, so take the upstream 0.19.2 release rather than the distribution's.
+      - name: Install the upstream patchelf
+        env:
+          PATCHELF_VERSION: '0.19.2'
+          PATCHELF_ARCH: ${{ matrix.arch == 'arm64' && 'aarch64' || 'x86_64' }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/patchelf-$PATCHELF_VERSION"
+          mkdir -p "$root"
+          curl -fsSL --retry 3 --retry-delay 2 -o "$root/patchelf.tar.gz" \
+            "https://github.com/NixOS/patchelf/releases/download/$PATCHELF_VERSION/patchelf-$PATCHELF_VERSION-$PATCHELF_ARCH.tar.gz"
+          tar -xzf "$root/patchelf.tar.gz" -C "$root"
+          echo "$root/bin" >> "$GITHUB_PATH"
+          "$root/bin/patchelf" --version
 
       # The application is built in a tree of its own rather than in this checkout, so the
       # Linux support files stay available to overlay and nothing in the workspace changes.
