@@ -258,6 +258,23 @@ jobs:
         working-directory: ${{ env.SOURCE_ROOT }}
         run: pnpm run package:desktop:${{ matrix.target == 'linux-x64' && 'linux:x64' || 'linux:arm64' }}
 
+      # A sharp prebuild exists twice in the prepared tree: the hoisted `@img` copy and pnpm's
+      # `.pnpm` copy that `sharp` can resolve from. Print every native prebuild and whether the
+      # glib isolation rename reached it, so a SIGSEGV in the payload smoke names the culprit.
+      - name: Diagnose sharp native payload
+        if: failure()
+        run: |
+          set -euo pipefail
+          base="$SOURCE_ROOT/apps/desktop/.desktop-build/targets/${{ matrix.target }}/dsh/node_modules"
+          if [ ! -d "$base" ]; then
+            echo "no prepared dsh tree at $base"
+            exit 0
+          fi
+          while IFS= read -r file; do
+            renamed=$(nm -D --defined-only "$file" 2>/dev/null | grep -c 'vipsglib_' || true)
+            echo "$file renamed_symbols=$renamed"
+          done < <(find "$base" -path '*@img*' \( -name '*.node' -o -name 'libvips-cpp.so*' \) -type f | sort)
+
       - name: Record the packaging run
         if: always()
         run: |
