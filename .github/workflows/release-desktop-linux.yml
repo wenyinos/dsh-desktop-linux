@@ -154,11 +154,12 @@ jobs:
       # The prepared payload compiles the native system add-ons against the Node development
       # headers and builds the deb and rpm with rpmbuild, xz, and dpkg-deb. The static Landlock
       # launcher is linked with musl, and the flock addon builds both glibc and musl variants.
+      # patchelf renames sharp's bundled glib symbols so Electron's GTK glib cannot claim them.
       - name: Install the packaging toolchain
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends \
-            build-essential musl-tools rpm xz-utils dpkg-dev fakeroot
+            build-essential musl-tools rpm xz-utils dpkg-dev fakeroot patchelf
 
       # The application is built in a tree of its own rather than in this checkout, so the
       # Linux support files stay available to overlay and nothing in the workspace changes.

@@ -134,6 +134,10 @@
       "base": "02e00e96e342b376e05e15bcc56030ff7b7f2dd18fdf2ab556a61393ca7ea63e",
       "replaces": true
     },
+    "apps/desktop/scripts/patch-sharp-glib-symbols.ts": {
+      "base": null,
+      "replaces": false
+    },
     "apps/desktop/scripts/prepare-cli.ts": {
       "base": "f51ba0a09eef7b609170548a163c40938331744e751b91d799533f51ffac0438",
       "replaces": true

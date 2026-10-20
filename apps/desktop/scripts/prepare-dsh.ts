@@ -33,6 +33,7 @@ import {
 } from './macos-runtime.ts'
 import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
 import { repairOfficeEnginePresence } from './office-engine-presence-fixup.ts'
+import { patchSharpGlibSymbols } from './patch-sharp-glib-symbols.ts'
 import { desktopRuntimeFileExclusion } from './runtime-file-policy.ts'
 import { selectOfficeEngine } from '../../../scripts/libreoffice-packages.mjs'
 
@@ -184,6 +185,15 @@ async function main(): Promise<void> {
       const cacheDirectory = resolveMacOSSignatureCacheDirectory(process.env, BUILD_PATHS.root)
       await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'sign:dsh-native', () => signMacOSRuntime(DSH_OUTPUT_ROOT, resolveDesktopAppId(process.env), resolveMacOSSigningEnvironment(process.env), target.arch, cacheDirectory))
       await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'sign:primary-native', () => signMacOSRuntime(join(RUNTIME_ROOT, 'primary-runtime'), resolveDesktopAppId(process.env), resolveMacOSSigningEnvironment(process.env), target.arch, cacheDirectory, 'primary'))
+    }
+    // sharp's prebuilt libvips statically links its own glib, and Electron's GTK glib claims the
+    // addon's glib imports first; renaming them keeps image attachments off the system glib. It
+    // changes the shipped bytes, so it runs before the integrity descriptor is written.
+    if (TARGET_PLATFORM === 'linux') {
+      await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:sharp-glib-symbols', async () => {
+        const patched = patchSharpGlibSymbols(DSH_OUTPUT_ROOT)
+        process.stdout.write(`desktop runtime: isolated sharp's bundled glib in ${String(patched.length)} file(s)\n`)
+      })
     }
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:manifests', () => prepareRuntimeManifests(DSH_OUTPUT_ROOT))
     // The FreeBSD payload has no locked Python runtime to execute; its smoke checks are skipped
