@@ -51,3 +51,6 @@ native/system/test/bin/
 
 # Agent tooling state, never part of the product.
 .zcodeignore
+
+# Generated company-signed CUA release record.
+/packages/experimental/cua-macos/cua-helper.json

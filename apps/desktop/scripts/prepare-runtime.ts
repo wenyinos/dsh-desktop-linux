@@ -125,9 +125,18 @@ async function main(): Promise<void> {
   const target = desktopTargetPlatform(resolveDesktopBuildTarget())
   rmSync(RUNTIME_ROOT, { recursive: true, force: true })
   mkdirSync(RUNTIME_ROOT, { recursive: true })
-  const nodeVersion = await prepareElectron(target)
-  await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:primary-runtime',
+  const preparePrimary = () => packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:primary-runtime',
     () => preparePrimaryRuntime({ deferSmoke: values['defer-primary-runtime-smoke'] }))
+  let nodeVersion: string
+  if (target.platform === 'win32') {
+    const [electron, primary] = await Promise.allSettled([prepareElectron(target), preparePrimary()])
+    if (electron.status === 'rejected') throw electron.reason
+    if (primary.status === 'rejected') throw primary.reason
+    nodeVersion = electron.value
+  } else {
+    nodeVersion = await prepareElectron(target)
+    await preparePrimary()
+  }
   // The FreeBSD payload carries no locked manifest to read, because no complete locked payload
   // exists there; the pnpm copy that payload stages declares its own version.
   const { pnpm } = target.platform === 'freebsd'

@@ -10,6 +10,13 @@ export type DesktopAutoUpdateEnvironment = 'test' | 'production'
  */
 export type DesktopAutoUpdateTarget = 'mac-arm64' | 'mac-x64' | 'win-x64' | 'linux-x64' | 'linux-arm64' | 'freebsd-x64'
 
+/**
+ * Name the fixed installer object shared by uploading and cache refresh.
+ * @param target Supported Desktop target.
+ * @returns Fixed download filename.
+ */
+export function desktopLatestInstallerFilename(target: DesktopAutoUpdateTarget): string
+
 /** Public updater URL and object prefixes for one release target. */
 export interface DesktopAutoUpdateConfig {
   readonly environment: DesktopAutoUpdateEnvironment
@@ -101,3 +108,11 @@ export function resolveDesktopUploadConfig(
  * @returns Validated channel.
  */
 export function resolveDesktopUpdateChannel(env: NodeJS.ProcessEnv): 'nightly' | 'latest'
+
+/**
+ * Read a required nonempty deployment setting.
+ * @param env Packaging or upload settings.
+ * @param name Setting name included in missing-value diagnostics.
+ * @returns Trimmed setting value.
+ */
+export function requiredEnvironmentValue(env: NodeJS.ProcessEnv, name: string): string
