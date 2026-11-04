@@ -1,8 +1,8 @@
 {
-  "authoredAgainst": "b830ec950faba0a46dda564be3e2d854afed94f1",
+  "authoredAgainst": "66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db",
   "files": {
     ".gitignore": {
-      "base": "69aa6d10d236e1e188509ba9d6f9b1170c6edba9b3a1dd1b9a4a1b8a54dd3dfe",
+      "base": "d1bc50ca002b96a6ef6254025222c0ae7a369be085e32ab4ef46eb99f7d74a72",
       "replaces": true
     },
     "apps/desktop-host/src/office.ts": {
@@ -22,11 +22,11 @@
       "replaces": false
     },
     "apps/desktop/electron-builder.config.d.mts": {
-      "base": "d508af45daa24f2603cd19220bf5a0792a95dbb63a7ec3443fd873553a92a2eb",
+      "base": "6fc1ac7fa08a38ae3a302f4676649db67269b7e027bfc14eee76a9cbc7335369",
       "replaces": true
     },
     "apps/desktop/package.json": {
-      "base": "3324ada108d19adb9eee3b8a638607b89c9cfcafc50d5aca5f2b77e3926760d1",
+      "base": "692a3ed711497a6ffeeecd64748ea4d907ed8b80677d0f32798c109792734576",
       "replaces": true,
       "merge": true
     },
@@ -67,19 +67,19 @@
       "replaces": false
     },
     "apps/desktop/scripts/desktop-auto-update-environment.d.mts": {
-      "base": "e27802491a9ff9351dcb0e1ea7577eaec784c2cd1e1c0b7c8893c278b4dd4e22",
+      "base": "23bb59bff995b8a11c190bf494747d5ec3b093f83378efc13b6fe3d4dcbb0ac7",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-auto-update-environment.mjs": {
-      "base": "a0b00d469637147e2c13a320f0eb7c4ddc56b98d08ea8f8ca2b41ae68e49e97f",
+      "base": "d098de6e2cc1b3e46b545fef998153a42991589ce39cf2ea677114c4f97a3ce1",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-build-paths.d.mts": {
-      "base": "a06fcc264fd78d9cf28a8e40ee9d6c4bac71a8e8001819f40becfc224b8649ba",
+      "base": "b1145484af267a5f95df4fdc45a00e44957c6fc18608d639f43121e02412cbd3",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-build-paths.mjs": {
-      "base": "d5bc75d0b882996d14559d938b69b99a3dd87c5f2e6d23abacb72e7badbb3f59",
+      "base": "b6c04e3f01704387dedf3262922f9f881fa01740ec157229049b5098d2c6e782",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-build-version-discovery.ts": {
@@ -87,11 +87,11 @@
       "replaces": true
     },
     "apps/desktop/scripts/desktop-package-environment.d.mts": {
-      "base": "671d0434106dc9e8440f6522c362be0f43758ac8589e840e26ac22821629b2ce",
+      "base": "16dd5ee48a92b6eeb91700fa1456af463202935428a9e16206ad2d8cbbafbf16",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-package-environment.mjs": {
-      "base": "6b3e4f5fa97a70161c4ea038ef66f66218dd3961fcc348384cbcbb0f470667dd",
+      "base": "56139bb4bf52f90e4aed11de2872d7417905521a94047ae6899a2187ba3b8df7",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-toolchain-preflight.ts": {
@@ -99,11 +99,11 @@
       "replaces": true
     },
     "apps/desktop/scripts/desktop-upload-plan.ts": {
-      "base": "c590ef85ade3d6359f57fca88398ea4dfb0b597ee01980c5a459a6a57640f8de",
+      "base": "cd3019fad4bbdcc85c110a6d38e7287603f74373c9e8c31ab245b9252057944e",
       "replaces": true
     },
     "apps/desktop/scripts/electron-builder-config.mjs": {
-      "base": "5f5fe52e0c5d275eac1344eef55ef16448edb4cea74ddd44f421fda9463d6dd0",
+      "base": "54c286edc4d3707a313444c73af58c47cb802d4ed68e68013e0642c488368931",
       "replaces": true
     },
     "apps/desktop/scripts/freebsd-package.ts": {
@@ -131,7 +131,7 @@
       "replaces": false
     },
     "apps/desktop/scripts/package-target.ts": {
-      "base": "02e00e96e342b376e05e15bcc56030ff7b7f2dd18fdf2ab556a61393ca7ea63e",
+      "base": "2d5648300b8093b39a211a52d328bbbf28a9d883c81bd7ff55bbc7aed3878eb7",
       "replaces": true
     },
     "apps/desktop/scripts/patch-sharp-glib-symbols.ts": {
@@ -143,7 +143,7 @@
       "replaces": true
     },
     "apps/desktop/scripts/prepare-dsh.ts": {
-      "base": "7f92084f5c0c86024f1ad4e0a5fdd07f616e4f340422bcbea802e8108449547b",
+      "base": "66e7bb911212d7728fe18cd7079923696b7a72bf047b2b57aa19efd6930d2469",
       "replaces": true
     },
     "apps/desktop/scripts/prepare-primary-runtime.ts": {
@@ -151,7 +151,7 @@
       "replaces": true
     },
     "apps/desktop/scripts/prepare-runtime.ts": {
-      "base": "a6459e1b0319ed5ced9d41c42c7a29e5a7953b8026453ac3fd4016bad6bcc79c",
+      "base": "ee9f6976361cbe8eceb698e7155ca76b3639a5b9f3d636af85f7337b07a956d2",
       "replaces": true
     },
     "apps/desktop/scripts/render-linux-icons.ts": {
@@ -175,19 +175,19 @@
       "replaces": true
     },
     "apps/desktop/scripts/upload-target.ts": {
-      "base": "8978238e548b06d0c452409b8b570b48bacf0da53d8f336eb91bbc9c213fb155",
+      "base": "987d6e4026d667bbb2140b96bab87d07fc0f007e3ef9d3c493084feb81814f73",
       "replaces": true
     },
     "apps/desktop/src/host-process.ts": {
-      "base": "6b9d3e558f526b7832020fb43d6682a07a68bf2d5657f26951f50a4f3eabfa28",
+      "base": "802d87760d921a7d87592a3107b404a825ebe6ad6e1387a9cfceec8fd99ce2dc",
       "replaces": true
     },
     "apps/desktop/src/main.ts": {
-      "base": "e345eda0425f2df795d20413bb87bb9a3ddc46e71ceb1cec0755ad1cca3fb847",
+      "base": "51f22c1596d03af995962de58ee3d134799cc2f48aa90904e3d618785a78e893",
       "replaces": true
     },
     "apps/desktop/src/project-manager.ts": {
-      "base": "2ad0aacba5377e82c1ed2bd70f52003ffdf91fa0e287dd3d51cfd896f2249748",
+      "base": "45248e8e74fe5151947f4547521585701db081f11b46939b06d5f6b5723eba53",
       "replaces": true
     },
     "apps/desktop/src/tray-icon-path.ts": {
@@ -203,11 +203,11 @@
       "replaces": true
     },
     "apps/desktop/tests/desktop-build-paths.spec.ts": {
-      "base": "c329fffd948427f5fcbe119aeee83e8220eba8a0be9a6f97d727fd642fefb865",
+      "base": "2054547f91ae111a4ba127250fc22bd44bcf316c6ed8a0a5529d138e89d09774",
       "replaces": true
     },
     "apps/desktop/tests/desktop-package-environment.spec.ts": {
-      "base": "17e4064a8a21fcce62e4d6e429465b66cda0dc511385a4e8e83764eb3d90c5b4",
+      "base": "f02b185b7e4631929c0e1b6eb10b31f6e8939bdbbc047bed9a9cde6c1dc2a788",
       "replaces": true
     },
     "apps/desktop/tests/fixtures/pnpm-smoke.mjs": {
@@ -219,7 +219,7 @@
       "replaces": true
     },
     "apps/desktop/tests/installer-packaging.spec.ts": {
-      "base": "0d0574102b6e1c156276eac0c29673925cac2f18cb8a34d7d5a6201d7b4ca39b",
+      "base": "6eb1e34363874ac1f6d756689d858cea168dc769c8256f68fc308eb38c0f0616",
       "replaces": true
     },
     "apps/desktop/tests/office-engine-presence-fixup.spec.ts": {
@@ -283,12 +283,12 @@
       "replaces": true
     },
     "package.json": {
-      "base": "144632fb57adcfb10a7d710b236a8a53258be6c0125617d21f68f4377608f7da",
+      "base": "805ddd9dce6f9c80b7050e2c9938f423088e422b31dec9bc53128e35c6e664d2",
       "replaces": true,
       "merge": true
     },
     "packages/boot/app-boot/src/profile-resolution/resolver.ts": {
-      "base": "a32f79dfd944a15c0839f2690860deb73658a138ebaba92a039257b68cf22f0c",
+      "base": "0914b65b5eb239940327c01dfe1547a61b47a87915d27f94b8b2b64602e78b55",
       "replaces": true
     },
     "packages/fs/tool-fs-search/src/search-core.ts": {

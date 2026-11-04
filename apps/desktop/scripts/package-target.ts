@@ -574,11 +574,6 @@ export async function packageTarget(
       ], buildEnv, REPOSITORY_ROOT)
     }
   }
-      'pack',
-      '--pack-destination',
-      buildPaths.packedLandlock,
-    ], buildEnv, REPOSITORY_ROOT)
-  }
   const prepareRuntime = () => executePreparation(
     ['run', 'prepare:runtime', ...(signPrimaryRuntime ? ['--defer-primary-runtime-smoke'] : [])], downloadEnv)
   if (target.platform === 'win32') {

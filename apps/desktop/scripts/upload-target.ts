@@ -8,7 +8,6 @@ import { requiredEnvironmentValue, resolveDesktopAutoUpdateEnvironment, resolveD
 import { desktopTargetPlatform } from './desktop-build-paths.mjs'
 import { loadDesktopPackageEnvironment } from './desktop-package-environment.mjs'
 import { createDesktopUploadPlan, type DesktopUploadPlan } from './desktop-upload-plan.ts'
-import { desktopTargetPlatform } from './desktop-build-paths.mjs'
 import { desktopReleaseTag, tagDesktopRelease } from './desktop-release-tag.ts'
 import { uploadDesktopRelease } from './desktop-upload-run.ts'
 import { DesktopPurgeError, purgeDesktopInstaller, resolveDesktopPurgeConfig } from './desktop-edgeone.ts'
