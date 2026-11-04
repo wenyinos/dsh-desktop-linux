@@ -154,12 +154,16 @@ jobs:
           DSH_ELECTRON_URL: ${{ env.FREEBSD_ELECTRON_URL }}
           DSH_ELECTRON_SHA256: ${{ env.FREEBSD_ELECTRON_SHA256 }}
           DSH_ELECTRON_VERSION: ${{ env.FREEBSD_ELECTRON_VERSION }}
+          # The 0.2.2 build runs several ts.Program and tsdown gates at once; four of them
+          # exhaust the VM's memory and the kernel kills the largest child. Two keep the peak
+          # inside the allocation below.
+          DSH_GATE_CONCURRENCY: '2'
         with:
           release: '15.1'
           arch: x86_64
-          mem: 8192
+          mem: 10240
           cpu: 4
-          envs: 'DSH_TAG DSH_VERSION DSH_UPSTREAM DSH_ELECTRON_URL DSH_ELECTRON_SHA256 DSH_ELECTRON_VERSION'
+          envs: 'DSH_TAG DSH_VERSION DSH_UPSTREAM DSH_ELECTRON_URL DSH_ELECTRON_SHA256 DSH_ELECTRON_VERSION DSH_GATE_CONCURRENCY'
           run: |
             set -eu
             sh "$GITHUB_WORKSPACE/.github/linux-overlay/build-freebsd.sh"
