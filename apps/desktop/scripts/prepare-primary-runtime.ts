@@ -5,7 +5,6 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import {
-  prepareOfficeSkillAssets,
   preparePrimaryRuntime as preparePayload,
   smokePrimaryRuntime as smokePayload,
 } from '../../../scripts/primary-runtime/prepare.ts'
@@ -17,11 +16,10 @@ import { scrubWindowsSigningEnvironment } from './windows-sign.mjs'
  * Assemble the FreeBSD payload from the build host's own Node installation.
  *
  * FreeBSD has neither python-build-standalone builds nor a binary wheel set, so this payload
- * carries the Office skill assets and a Node executable copied from the build host, which is
- * what the Office skill launcher runs. The Python components are absent and the workspace
- * dependency tool reports them unavailable when called; no `runtime.json` is written because
- * there is no complete locked payload to describe.
- * @param runtimeRoot - Desktop runtime directory that receives `primary-runtime` and `office-skills`.
+ * carries a Node executable copied from the build host. The Python components are absent and
+ * the workspace dependency tool reports them unavailable when called; no `runtime.json` is
+ * written because there is no complete locked payload to describe.
+ * @param runtimeRoot - Desktop runtime directory that receives `primary-runtime`.
  */
 async function prepareFreebsdRuntime(runtimeRoot: string): Promise<void> {
   const require = createRequire(import.meta.url)
@@ -35,9 +33,6 @@ async function prepareFreebsdRuntime(runtimeRoot: string): Promise<void> {
   cpSync(process.execPath, join(nodeBin, 'node'))
   const pnpmManifest = require.resolve('pnpm')
   await cp(dirname(pnpmManifest), join(destination, 'dependencies', 'pnpm'), { recursive: true, dereference: true })
-  await prepareOfficeSkillAssets(
-    join(dirname(require.resolve('@deepseek-ai/dsh-skill-office/package.json')), 'assets'),
-    join(runtimeRoot, 'office-skills'))
 }
 
 /**

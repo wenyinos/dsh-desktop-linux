@@ -34,6 +34,11 @@ export function desktopReleasesRoot(env: NodeJS.ProcessEnv): string {
  */
 export function resolveDesktopRetentionRunner(env: NodeJS.ProcessEnv): string {
   const target = resolveDesktopBuildTarget(env)
+  // The runner mapping describes the managed update feed, which the deb/rpm and pkg targets ship
+  // outside; their release workflows never resolve this label.
+  if (target !== 'mac-arm64' && target !== 'mac-x64' && target !== 'win-x64') {
+    throw new Error(`desktop retention: ${target} is not a managed-feed release target`)
+  }
   const routes = desktopPublishRunnersSchema.parse(JSON.parse(required(env, 'DESKTOP_PUBLISH_RUNNERS')))
   const route = routes[required(env, 'RUNNER_NAME')]
   if (!route || !route.target.includes(target)
