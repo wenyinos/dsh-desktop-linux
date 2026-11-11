@@ -26,15 +26,21 @@
 /freebsd-packaging-notes/sharp-edges/freebsd-15-keeps-the-package-database-in-sqlite:
   en: 6a73c3a57cb87896
   zh: bda63b66c24e584c
-/freebsd-packaging-notes/sharp-edges/the-office-engine-set-is-empty-on-purpose:
-  en: 5826f1eebf446f8a
-  zh: 34534c2adc6face1
+/freebsd-packaging-notes/sharp-edges/the-office-engine-is-installed-but-never-unpacked:
+  en: 97981104e9f3fcca
+  zh: ebab2237b1176c23
+/freebsd-packaging-notes/sharp-edges/enabling-office-on-freebsd:
+  en: 303039cc8c7baa78
+  zh: 646362e9a93f49fe
 /freebsd-packaging-notes/sharp-edges/the-zip-based-assumptions-in-the-build-chain:
   en: 93a92fcc0f7bda44
   zh: 9411e36b3a456683
 /freebsd-packaging-notes/verifying-a-package:
   en: af91939d93db12c7
   zh: 8fa25fa557bfa69f
+/freebsd-packaging-notes/republishing-a-freebsd-build:
+  en: 3ff3232a8413ab7a
+  zh: 0c3aca1b3b2876a8
 /freebsd-packaging-notes/current-limitations:
-  en: b60d2fb77d05426a
-  zh: ce5b5334e1e6ae0d
+  en: bf464b83df06860b
+  zh: 5d1ebbca3dd134a4

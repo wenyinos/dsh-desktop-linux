@@ -71,13 +71,36 @@ package (a Node bundler) answers to that name. Anything that shells out to `pkg`
 `/var/db/pkg/<name>-<version>/+MANIFEST` no longer exists; read installed-package metadata
 through `pkg query` (for example `pkg query -e '%n = electron44' '%dn %do %dv'`).
 
-### The Office engine set is empty on purpose
+### The Office engine is installed but never unpacked
 
-The LibreOffice kit declares every engine — including the WASM one — for Linux, macOS, and
-Windows only and rejects FreeBSD when an Office feature runs. The runtime therefore ships no
-engine, the packaged Host resolves the kit CLI with an explicit `cli: false` (skill reports
-"disabled"), and the packaging steps treat the engine closure as empty instead of failing on
-a missing directory.
+The kit does not refuse FreeBSD. `platformTarget()` answers `undefined` for every host that
+is not Linux, macOS, or Windows, so engine resolution falls through to the WASM package, and
+`@deepseek-ai/libreoffice-kit-wasm` declares no `os` or `cpu` — pnpm installs it here like
+anywhere else. What this fork declines to do is *use* it: `officePackageDirectories()`
+returns an empty set for FreeBSD, so no engine directory ever reaches `asarUnpack`, and the
+runtime smoke skips conversion behind a hard-coded platform test.
+
+State the consequence plainly, because an earlier revision of this page claimed the
+opposite: the 145 MB of engine assets (a 122 MB `dsoffice.wasm` plus its 22 MB data
+archive) are still copied into `app.asar`. They are simply never unpacked and never
+exercised — which also means the package pays for them without getting anything back.
+
+### Enabling Office on FreeBSD
+
+Nothing in the dependency graph blocks it, and the engine loader (`assets/dsoffice.cjs`)
+requires only `crypto`, `fs`, `os`, `util`, `worker_threads`, and `ws` — no native binding.
+Three overlay files keep it off, and all three belong to this fork rather than to upstream:
+
+- `scripts/libreoffice-packages.mjs` — drop the `freebsd` early return so the engine
+  directories reach `asarUnpack`. Reading 145 MB out of `app.asar` instead would hold the
+  whole archive-backed file in memory.
+- `apps/desktop/scripts/prepare-dsh.ts` — drop the `TARGET_PLATFORM !== 'freebsd'` guard so
+  the engine is verified on this platform like on every other.
+- `apps/desktop/scripts/smoke-runtime.ts` — replace the hard-coded `process.platform` test
+  with a real probe, so CI runs a conversion instead of printing that it is unavailable.
+
+The open question is resource use, not support: compiling a 122 MB WASM module in a worker
+thread on this Electron build has never been measured. One FreeBSD CI run answers it.
 
 ### The ZIP-based assumptions in the build chain
 
@@ -99,9 +122,29 @@ dsh --version   # prints the release version; runs the Electron runtime in Node 
 A full check also reads the package back with `pkg info -F` and exercises the desktop smoke
 (the workflow does both on every build).
 
+## Republishing a FreeBSD build
+
+Releases are republished from this repository; no artifact is ever rebuilt or replaced by
+hand:
+
+```sh
+gh workflow run release-desktop-linux.yml   --ref master -f force=true
+gh workflow run release-desktop-freebsd.yml --ref master -f force=true
+```
+
+`force=true` replaces the package a tag already published. Without it the run stops as soon
+as it finds an existing FreeBSD package for the tag, which is what the daily schedule relies
+on. Leave `tag` empty to package the newest upstream `dsh-vX.Y.Z-rc.N`.
+
+Both workflows publish into the *same* GitHub Release and may run concurrently: one uploads
+deb and rpm, the other the pkg, and each replaces only its own assets. A run packages what
+the overlay manifest lists, so a fix written into this tree reaches the FreeBSD package
+exactly as it reaches the Linux one — no source synchronization step exists or is needed.
+
 ## Current limitations
 
-- No Office conversion: the kit ships no FreeBSD engine (see above).
+- No Office conversion: the WASM engine is packaged but never unpacked or exercised (see
+  above).
 - No image processing: sharp's FreeBSD variant cannot be installed (see above).
 - No Python runtime payload and no sandbox: the workspace-dependency and confinement
   features report unavailable; the bundled Node and pnpm still work.

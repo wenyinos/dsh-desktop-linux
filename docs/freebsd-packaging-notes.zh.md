@@ -42,9 +42,21 @@ sharp 的 FreeBSD 变体（`@img/sharp-freebsd-wasm32`）在 registry 上存在�
 
 `/var/db/pkg/<name>-<version>/+MANIFEST` 已不存在；读取已安装包元数据请走 `pkg query`（例如 `pkg query -e '%n = electron44' '%dn %do %dv'`）。
 
-### Office 引擎集为空的刻意设计
+### Office 引擎装了但从不解包
 
-LibreOffice kit 声明其全部引擎（包括 WASM 引擎）仅支持 Linux、macOS 与 Windows，并在 Office 功能运行时拒绝 FreeBSD。因此运行时不分发任何引擎，打包后的 Host 以显式 `cli: false` 解析 kit CLI（技能报告“已禁用”），打包步骤也把引擎闭包视为空集，而不是在缺失目录上失败。
+kit 并不拒绝 FreeBSD：`platformTarget()` 对所有非 Linux/macOS/Windows 的宿主都返回 `undefined`，引擎解析于是落到 WASM 包，而 `@deepseek-ai/libreoffice-kit-wasm` 未声明 `os` 与 `cpu`，pnpm 在此平台上照常安装它。本 fork 拒绝的是**使用**它：`officePackageDirectories()` 对 FreeBSD 返回空集，因此没有任何引擎目录进入 `asarUnpack`，runtime 冒烟也在一处硬编码的平台判断后面跳过转换。
+
+结果值得直说，因为本文早先的版本给出了相反的结论：那 145 MB 引擎资产（122 MB 的 `dsoffice.wasm` 加 22 MB 的 data 归档）依旧被打进 `app.asar`，只是从不被解包、也从不被实际跑通——也就是说包体为它付了代价，却没有换来任何能力。
+
+### 在 FreeBSD 上启用 Office
+
+依赖图上没有任何阻碍，引擎加载器（`assets/dsoffice.cjs`）只 require `crypto`、`fs`、`os`、`util`、`worker_threads` 与 `ws`，不含原生绑定。挡住它的是三个 overlay 文件，全部属于本 fork 而不是上游：
+
+- `scripts/libreoffice-packages.mjs` —— 去掉 `freebsd` 的提前返回，让引擎目录进入 `asarUnpack`。否则每次都要从 `app.asar` 里读 145 MB，整块驻留内存。
+- `apps/desktop/scripts/prepare-dsh.ts` —— 去掉 `TARGET_PLATFORM !== 'freebsd'` 的短路，让该平台的引擎也走与其他平台相同的校验。
+- `apps/desktop/scripts/smoke-runtime.ts` —— 把硬编码的 `process.platform` 判断换成真实探测，让 CI 实际跑一次转换，而不是打印一句“不可用”。
+
+剩下的未知是资源开销而非平台支持：在这套 Electron 构建的 worker 线程里编译 122 MB 的 WASM 模块，从未被测量过。跑一次 FreeBSD CI 就能得到答案。
 
 ### 构建链路中的若干硬性约定
 
@@ -61,8 +73,21 @@ dsh --version   # prints the release version; runs the Electron runtime in Node 
 
 完整校验还包括用 `pkg info -F` 回读包元数据，并运行桌面冒烟（工作流每次构建都会执行这两步）。
 
+## 重发 FreeBSD 构建
+
+发布一律从本仓库重发，不手工重建或替换任何产物：
+
+```sh
+gh workflow run release-desktop-linux.yml   --ref master -f force=true
+gh workflow run release-desktop-freebsd.yml --ref master -f force=true
+```
+
+`force=true` 会替换该 tag 已经发布的包；不带它时，运行一旦发现该 tag 已有 FreeBSD 包就停止——每日定时任务依赖的正是这一行为。`tag` 留空表示打包最新的上游 `dsh-vX.Y.Z-rc.N`。
+
+两条工作流发布到**同一个** GitHub Release，可以并行执行：一条上传 deb 与 rpm，另一条上传 pkg，各自只替换自己的产物。运行打包的内容就是 overlay 清单列出的文件，因此写进本仓库的修复会与 Linux 完全一样地进入 FreeBSD 包——不存在也不需要源码同步步骤。
+
 ## 当前限制
 
-- 无 Office 转换：kit 不提供 FreeBSD 引擎（见上文）。
+- 无 Office 转换：WASM 引擎已打进包，但既不解包也未被验证（见上文）。
 - 无图片处理：sharp 的 FreeBSD 变体无法安装（见上文）。
 - 无 Python 运行时载荷、无沙箱：工作区依赖与进程约束功能报告不可用；内置 Node 与 pnpm 仍可用。
