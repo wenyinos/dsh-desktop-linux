@@ -1,12 +1,8 @@
 {
-  "authoredAgainst": "66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db",
+  "authoredAgainst": "ddac96760b6edf8fa0fe17cbdcf0b512f4c12b2c",
   "files": {
     ".gitignore": {
-      "base": "d1bc50ca002b96a6ef6254025222c0ae7a369be085e32ab4ef46eb99f7d74a72",
-      "replaces": true
-    },
-    "apps/desktop-host/src/office.ts": {
-      "base": "476724125820e03f258aee5939ea9adbda9c3125b7b07bd41cb0e6ee48bf34e3",
+      "base": "df49035ab1e4a032f024c1bd0f408770114044755728a9fc96a4ae09bec3a436",
       "replaces": true
     },
     "apps/desktop/.env.freebsd.example": {
@@ -26,7 +22,7 @@
       "replaces": true
     },
     "apps/desktop/package.json": {
-      "base": "692a3ed711497a6ffeeecd64748ea4d907ed8b80677d0f32798c109792734576",
+      "base": "f27a39672ecc89876cd34db0f52aeee1459432c4bbc0557837716db8c7832acc",
       "replaces": true,
       "merge": true
     },
@@ -67,11 +63,11 @@
       "replaces": false
     },
     "apps/desktop/scripts/desktop-auto-update-environment.d.mts": {
-      "base": "23bb59bff995b8a11c190bf494747d5ec3b093f83378efc13b6fe3d4dcbb0ac7",
+      "base": "5bb235e7176dbdf30c059e25a9193115e66d6e9275d9d611c2739c35289b3303",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-auto-update-environment.mjs": {
-      "base": "d098de6e2cc1b3e46b545fef998153a42991589ce39cf2ea677114c4f97a3ce1",
+      "base": "4fc37321febd4979b732a2832af4eb832602b30185e51584c1ddc0b0cb3db29a",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-build-paths.d.mts": {
@@ -91,7 +87,7 @@
       "replaces": true
     },
     "apps/desktop/scripts/desktop-package-environment.mjs": {
-      "base": "56139bb4bf52f90e4aed11de2872d7417905521a94047ae6899a2187ba3b8df7",
+      "base": "3fe7f59494487f1e51abe7996221baaebb2a0c779fb23d4125470f2e4e876e3e",
       "replaces": true
     },
     "apps/desktop/scripts/desktop-toolchain-preflight.ts": {
@@ -99,11 +95,11 @@
       "replaces": true
     },
     "apps/desktop/scripts/desktop-upload-plan.ts": {
-      "base": "cd3019fad4bbdcc85c110a6d38e7287603f74373c9e8c31ab245b9252057944e",
+      "base": "cab41929d48af5071f5c145e7f1954acd0fded0415af62eb143a43379f0e08ad",
       "replaces": true
     },
     "apps/desktop/scripts/electron-builder-config.mjs": {
-      "base": "54c286edc4d3707a313444c73af58c47cb802d4ed68e68013e0642c488368931",
+      "base": "73608915307d975d582a93f434b2a00491c0cd219c8140af98ef614a19ebe6d2",
       "replaces": true
     },
     "apps/desktop/scripts/freebsd-package.ts": {
@@ -159,7 +155,7 @@
       "replaces": false
     },
     "apps/desktop/scripts/retain-desktop-ci.ts": {
-      "base": "043fb53e182d9f9b895f815b91d930d9e6f30ddde383658b39eb92bc1adf24f0",
+      "base": "760009e283e367aecad3da93631c87718e67382a998a1dba026ab3f2411b4925",
       "replaces": true
     },
     "apps/desktop/scripts/smoke-packaged-runtime.ts": {
@@ -167,11 +163,11 @@
       "replaces": true
     },
     "apps/desktop/scripts/smoke-prepared-runtime.ts": {
-      "base": "2e54c393491430efa33bb4424af1cc5e141810c8dd88ba7f7b0f9fa59185d23b",
+      "base": "4a1df61860865203e516bcf81e3412a82e7bac5503ae6a843d9882c8511dc03b",
       "replaces": true
     },
     "apps/desktop/scripts/smoke-runtime.ts": {
-      "base": "2d3907d92f348e389df5c8c7ad5077d559c4457cb60624e3db8e8a7520601042",
+      "base": "713372e39e75803bda24b5e13f2e4a0d8702763b77317a8633ee6ed0bb56df47",
       "replaces": true
     },
     "apps/desktop/scripts/upload-target.ts": {
@@ -179,11 +175,11 @@
       "replaces": true
     },
     "apps/desktop/src/host-process.ts": {
-      "base": "802d87760d921a7d87592a3107b404a825ebe6ad6e1387a9cfceec8fd99ce2dc",
+      "base": "fb64b5a77ea65aaa8887268d7f9e2b2051768aa7fa1e5b1e416c8acb4f40c5d0",
       "replaces": true
     },
     "apps/desktop/src/main.ts": {
-      "base": "51f22c1596d03af995962de58ee3d134799cc2f48aa90904e3d618785a78e893",
+      "base": "d2464e5c6376967888b69c8bbdefae64f0dce84dc113b9b5ab16b5eedcad9adf",
       "replaces": true
     },
     "apps/desktop/src/project-manager.ts": {
@@ -199,7 +195,7 @@
       "replaces": true
     },
     "apps/desktop/tests/desktop-auto-update-environment.spec.ts": {
-      "base": "1784802d4bf6987475534bdcba0a55c031467016b5693cbbb90acb29e7858a8a",
+      "base": "a7df4767cd0fc5f79cc079795c08a2cd01db1d0a9157be62f241ac476254c897",
       "replaces": true
     },
     "apps/desktop/tests/desktop-build-paths.spec.ts": {
@@ -283,16 +279,12 @@
       "replaces": true
     },
     "package.json": {
-      "base": "805ddd9dce6f9c80b7050e2c9938f423088e422b31dec9bc53128e35c6e664d2",
+      "base": "9669cb9932839f95929112eb52fc95c8360cd7fc764f8b5148f10befdee805a9",
       "replaces": true,
       "merge": true
     },
     "packages/boot/app-boot/src/profile-resolution/resolver.ts": {
       "base": "0914b65b5eb239940327c01dfe1547a61b47a87915d27f94b8b2b64602e78b55",
-      "replaces": true
-    },
-    "packages/fs/tool-fs-search/src/search-core.ts": {
-      "base": "d642c99286faff7cb6e70a24b0c4743184b3f83e8c6620bc9537c426987b198f",
       "replaces": true
     },
     "patches/node-pty@1.2.0-beta.15.patch": {
@@ -301,6 +293,10 @@
     },
     "scripts/libreoffice-packages.mjs": {
       "base": "dee06b3337deec553858d9edbbbef09bbca88dadefead0903cbd42162acfe445",
+      "replaces": true
+    },
+    "packages/util/ripgrep/src/index.ts": {
+      "base": "d913ed68b9dd77a4c7308510bfc9b87a810d34c1793225337a9fcfaded00e2bb",
       "replaces": true
     }
   },
