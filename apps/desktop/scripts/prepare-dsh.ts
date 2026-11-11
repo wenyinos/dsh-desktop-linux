@@ -181,11 +181,12 @@ async function main(): Promise<void> {
       && !existsSync(join(DSH_OUTPUT_ROOT, 'node_modules', '@deepseek-ai', `libreoffice-kit-${officeEngine}`, 'prebuilds.json'))) {
       throw new Error(`desktop runtime: missing required LibreOffice engine ${officeEngine}`)
     }
-    // The repaired probe is part of the sealed runtime: it is written before the integrity
+    // The repaired probes are part of the sealed runtime: they are written before the integrity
     // descriptor, so the packaged application records the bytes it actually ships.
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:office-engine-presence', async () => {
-      const repaired = repairOfficeEnginePresence(DSH_OUTPUT_ROOT)
-      process.stdout.write(`desktop runtime: repaired the Office engine presence probe in ${repaired}\n`)
+      for (const repaired of repairOfficeEnginePresence(DSH_OUTPUT_ROOT)) {
+        process.stdout.write(`desktop runtime: repaired the Office engine presence probe in ${repaired}\n`)
+      }
     })
     if (process.platform === 'darwin' && process.env.DSH_DESKTOP_UNSIGNED !== '1') {
       const cacheDirectory = resolveMacOSSignatureCacheDirectory(process.env, BUILD_PATHS.root)
