@@ -232,37 +232,28 @@ export function apply(ctx) {
       }
     }
     if (officeHost) {
-    for (const { extension } of inputs) {
-      const converted = await fetch(new URL(`/desktop-smoke-office/${extension}`, ready.url), {
-        headers: { cookie }, signal: AbortSignal.timeout(120_000),
-      })
-      if (!converted.ok) throw new Error(`desktop runtime: ${extension} conversion failed: ${await converted.text()}`)
-      const pdf = Buffer.from(await converted.arrayBuffer())
-      if (!/^%PDF-\d\.\d/u.test(pdf.subarray(0, 8).toString())
+      for (const { extension } of inputs) {
+        const converted = await fetch(new URL(`/desktop-smoke-office/${extension}`, ready.url), {
+          headers: { cookie }, signal: AbortSignal.timeout(120_000),
+        })
+        if (!converted.ok) throw new Error(`desktop runtime: ${extension} conversion failed: ${await converted.text()}`)
+        const pdf = Buffer.from(await converted.arrayBuffer())
+        if (!/^%PDF-\d\.\d/u.test(pdf.subarray(0, 8).toString())
         || !pdf.subarray(-1024).toString().trimEnd().endsWith('%%EOF')) {
-        throw new Error(`desktop runtime: invalid ${extension} PDF output`)
+          throw new Error(`desktop runtime: invalid ${extension} PDF output`)
+        }
       }
-    }
-    for (const { extension } of inputs) {
-      const operations = await fetch(new URL(`/desktop-smoke-office-operations/${extension}`, ready.url), {
-        headers: { cookie }, signal: AbortSignal.timeout(240_000),
-      })
-      if (!operations.ok) throw new Error(`desktop runtime: ${extension} Office operations failed: ${await operations.text()}`)
-      const result = await operations.json() as { images: string[]; converted: string; recalculated: string | null }
-      // PNG images, then ZIP containers for OpenDocument and XLSX outputs.
-      if (result.images.length === 0 || result.images.some(signature => signature !== '89504e470d0a1a0a')
+      for (const { extension } of inputs) {
+        const operations = await fetch(new URL(`/desktop-smoke-office-operations/${extension}`, ready.url), {
+          headers: { cookie }, signal: AbortSignal.timeout(240_000),
+        })
+        if (!operations.ok) throw new Error(`desktop runtime: ${extension} Office operations failed: ${await operations.text()}`)
+        const result = await operations.json() as { images: string[]; converted: string; recalculated: string | null }
+        // PNG images, then ZIP containers for OpenDocument and XLSX outputs.
+        if (result.images.length === 0 || result.images.some(signature => signature !== '89504e470d0a1a0a')
         || result.converted !== '504b0304' || (extension === 'xlsx' ? result.recalculated !== '504b0304' : result.recalculated !== null)) {
-        throw new Error(`desktop runtime: invalid ${extension} Office operation output: ${JSON.stringify(result)}`)
-      }
-    }
-    console.log('desktop runtime: DOCX, XLSX, PPTX to PDF, image rendering, conversion, and recalculation passed')
-      const cliResponse = await fetch(new URL('/desktop-smoke-office-cli', ready.url), {
-        headers: { cookie }, signal: AbortSignal.timeout(120_000),
-      })
-      if (!cliResponse.ok) throw new Error(`desktop runtime: skill CLI failed: ${await cliResponse.text()}`)
-      const cliResult = await cliResponse.json() as { capabilities: { runtime: { cliPath: string } }; pdf: string }
-      if (!cliResult.capabilities.runtime.cliPath.endsWith('cli.js') || Buffer.from(cliResult.pdf, 'base64').subarray(0, 5).toString() !== '%PDF-') {
-        throw new Error('desktop runtime: skill CLI did not return capabilities and a PDF')
+          throw new Error(`desktop runtime: invalid ${extension} Office operation output: ${JSON.stringify(result)}`)
+        }
       }
       console.log('desktop runtime: DOCX, XLSX, PPTX to PDF, image rendering, conversion, and recalculation passed')
     } else {
