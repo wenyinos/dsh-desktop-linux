@@ -154,10 +154,11 @@ jobs:
       # The prepared payload compiles the native system add-ons against the Node development
       # headers and builds the deb and rpm with rpmbuild, xz, and dpkg-deb. The static Landlock
       # launcher is linked with musl, and the flock addon builds both glibc and musl variants.
+      # Runner DNS has failed transiently mid-download; the retries keep that from failing the job.
       - name: Install the packaging toolchain
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends \
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install --yes --no-install-recommends \
             build-essential musl-tools rpm xz-utils dpkg-dev fakeroot
 
       # patchelf renames sharp's bundled glib symbols so Electron's GTK glib cannot claim them.
