@@ -154,9 +154,11 @@ jobs:
       # The prepared payload compiles the native system add-ons against the Node development
       # headers and builds the deb and rpm with rpmbuild, xz, and dpkg-deb. The static Landlock
       # launcher is linked with musl, and the flock addon builds both glibc and musl variants.
-      # Runner DNS has failed transiently mid-download; the retries keep that from failing the job.
+      # The runner resolver has failed for the Ubuntu mirrors in consecutive runs, so public
+      # servers are appended behind the configured ones for resolution to fall through.
       - name: Install the packaging toolchain
         run: |
+          sudo sh -c 'printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" >> /etc/resolv.conf'
           sudo apt-get -o Acquire::Retries=5 update
           sudo apt-get -o Acquire::Retries=5 install --yes --no-install-recommends \
             build-essential musl-tools rpm xz-utils dpkg-dev fakeroot
