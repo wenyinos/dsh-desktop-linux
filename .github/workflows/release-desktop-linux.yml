@@ -154,27 +154,13 @@ jobs:
       # The prepared payload compiles the native system add-ons against the Node development
       # headers and builds the deb and rpm with rpmbuild, xz, and dpkg-deb. The static Landlock
       # launcher is linked with musl, and the flock addon builds both glibc and musl variants.
-      # The runner resolver has failed for the stock Ubuntu mirrors in consecutive runs, so the
-      # sources point at a global mirror that serves amd64 and arm64 from the same host.
+      # The runner resolver has failed for the Ubuntu mirrors; public resolvers replace it and
+      # apt stays on IPv4 so a broken IPv6 path cannot stall the lookup.
       - name: Install the packaging toolchain
         run: |
-          set -euo pipefail
-          codename="$(. /etc/os-release && printf '%s' "$VERSION_CODENAME")"
-          case "$(dpkg --print-architecture)" in
-            amd64) uri="https://mirrors.mit.edu/ubuntu" ;;
-            arm64) uri="https://mirrors.mit.edu/ubuntu-ports" ;;
-            *) echo "unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;;
-          esac
-          sudo rm -f /etc/apt/apt-mirrors.txt
-          {
-            printf 'Types: deb\nURIs: %s\nSuites: %s %s-updates %s-backports\nComponents: main restricted universe multiverse\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n\n' \
-              "$uri" "$codename" "$codename" "$codename"
-            printf 'Types: deb\nURIs: %s\nSuites: %s-security\nComponents: main restricted universe multiverse\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n' \
-              "$uri" "$codename"
-          } | sudo tee /etc/apt/sources.list.d/ubuntu.sources >/dev/null
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get -o Acquire::Retries=5 update
-          sudo apt-get -o Acquire::Retries=5 install --yes --no-install-recommends \
+          sudo sh -c 'printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf'
+          sudo apt-get -o Acquire::Retries=5 -o Acquire::ForceIPv4=true update
+          sudo apt-get -o Acquire::Retries=5 -o Acquire::ForceIPv4=true install --yes --no-install-recommends \
             build-essential musl-tools rpm xz-utils dpkg-dev fakeroot
 
       # patchelf renames sharp's bundled glib symbols so Electron's GTK glib cannot claim them.
