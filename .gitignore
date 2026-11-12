@@ -54,5 +54,8 @@ native/system/test/bin/
 # Agent tooling state, never part of the product.
 .zcodeignore
 
+# WorkBuddy session data and local notes.
+.workbuddy/
+
 # Generated company-signed CUA release record.
 /packages/experimental/cua-macos/cua-helper.json
