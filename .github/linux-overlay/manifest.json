@@ -1,5 +1,5 @@
 {
-  "authoredAgainst": "ddac96760b6edf8fa0fe17cbdcf0b512f4c12b2c",
+  "authoredAgainst": "38a6a5c965aa99ab525161efb7cc5cf1fe62fced",
   "files": {
     ".gitignore": {
       "base": "df49035ab1e4a032f024c1bd0f408770114044755728a9fc96a4ae09bec3a436",
@@ -22,7 +22,7 @@
       "replaces": true
     },
     "apps/desktop/package.json": {
-      "base": "f27a39672ecc89876cd34db0f52aeee1459432c4bbc0557837716db8c7832acc",
+      "base": "c4452f725e19d45757a7e553eed11a0171e3faba321a7b92828fb998d8dd5cad",
       "replaces": true,
       "merge": true
     },
@@ -279,7 +279,7 @@
       "replaces": true
     },
     "package.json": {
-      "base": "9669cb9932839f95929112eb52fc95c8360cd7fc764f8b5148f10befdee805a9",
+      "base": "23d0b7ff113a11437900ab0a3c55fcd86f6d62027f4ff3e1aeb5ae08bee8db9c",
       "replaces": true,
       "merge": true
     },
