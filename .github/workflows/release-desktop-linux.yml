@@ -84,16 +84,19 @@ jobs:
           echo "version=${tag#dsh-v}" >> "$GITHUB_OUTPUT"
 
           # The published release is the record of what has been packaged, so a daily run
-          # against an unchanged upstream stops here instead of rebuilding it.
+          # against an unchanged upstream stops here instead of rebuilding it. The presence of
+          # the release alone is not enough: the FreeBSD workflow shares it and may have run
+          # first, so this checks for a Linux package before deciding there is nothing to do.
           if [ "${FORCE}" = "true" ]; then
             echo "build=true" >> "$GITHUB_OUTPUT"
             echo "Selected ${tag}; rebuilding because force was requested."
-          elif gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+          elif gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" --json assets --jq '.assets[].name' 2>/dev/null \
+            | grep -qE -- '-linux-[a-z0-9_]+\.(deb|rpm)$'; then
             echo "build=false" >> "$GITHUB_OUTPUT"
-            echo "Selected ${tag}; already packaged, so no build is needed."
+            echo "Selected ${tag}; already carries Linux packages, so no build is needed."
           else
             echo "build=true" >> "$GITHUB_OUTPUT"
-            echo "Selected ${tag}; not packaged yet."
+            echo "Selected ${tag}; no Linux package yet."
           fi
 
       # Every file this fork changes must be listed or excluded, or the build receives an
